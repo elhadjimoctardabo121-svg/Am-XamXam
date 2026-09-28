@@ -25,6 +25,15 @@ type ChapterRow = {
   title: string;
   position: number;
   lessons: { id: string; level: number; title: string }[];
+  exercises: { id: string; position: number; type: string; title: string }[];
+};
+
+const EXERCISE_TYPE_LABELS: Record<string, string> = {
+  dissertation: "Dissertation",
+  commentaire: "Commentaire",
+  qcm: "QCM",
+  quiz: "Quiz éclair",
+  autre: "Exercice",
 };
 
 export default async function SubjectPage({ params }: { params: Promise<Params> }) {
@@ -52,7 +61,7 @@ export default async function SubjectPage({ params }: { params: Promise<Params> 
 
   const { data: chapters } = await supabase
     .from("chapters")
-    .select("id, slug, title, position, lessons(id, level, title)")
+    .select("id, slug, title, position, lessons(id, level, title), exercises(id, position, type, title)")
     .eq("subject_id", (await supabase.from("subjects").select("id").eq("code", subject).single()).data?.id)
     .eq("class_id", student.class_id)
     .order("position");
@@ -103,6 +112,26 @@ export default async function SubjectPage({ params }: { params: Promise<Params> 
                 </li>
               )}
             </ul>
+
+            {chapter.exercises.length > 0 && (
+              <>
+                <h3 className="mt-3 text-sm font-bold text-muted">Exercices</h3>
+                <ul className="mt-1 flex flex-wrap gap-2">
+                  {[...chapter.exercises]
+                    .sort((a, b) => a.position - b.position)
+                    .map((ex) => (
+                      <li key={ex.id}>
+                        <Link
+                          href={`/exercices/${ex.id}`}
+                          className="inline-block rounded-full border border-line px-3 py-1 text-xs font-bold hover:bg-line/50"
+                        >
+                          {EXERCISE_TYPE_LABELS[ex.type] ?? ex.type}
+                        </Link>
+                      </li>
+                    ))}
+                </ul>
+              </>
+            )}
           </section>
         ))}
       </main>
