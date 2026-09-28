@@ -1,37 +1,51 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
+import { correctQcm, revealCorrection, revealQuiz } from "@/app/actions/exercises";
 import { buttonClass } from "@/components/ui";
 import { renderLessonMarkdown } from "@/lib/markdown";
 
-type QcmQuestion = { num: number; text: string; options: { label: string; text: string }[]; correctLabel: string | null };
-type QuizQuestion = { num: number; text: string; answer: string };
+// IMPORTANT : aucune bonne réponse ni corrigé n'est passé en props ici — tout
+// est demandé au serveur (Server Action) au moment où l'élève termine, pour
+// qu'un corrigé ne puisse pas être lu dans le code source avant de répondre.
+
+type QcmQuestionSafe = { num: number; text: string; options: { label: string; text: string }[] };
+type QuizQuestionSafe = { num: number; text: string };
 
 type Props =
-  | { type: "qcm"; data: { questions: QcmQuestion[] }; correctionMd: string }
-  | { type: "quiz"; data: { questions: QuizQuestion[] }; correctionMd: string }
-  | { type: "dissertation" | "commentaire" | "autre"; statementMd: string; correctionMd: string };
+  | { type: "qcm"; exerciseId: string; questions: QcmQuestionSafe[] }
+  | { type: "quiz"; exerciseId: string; questions: QuizQuestionSafe[] }
+  | { type: "dissertation" | "commentaire" | "autre"; exerciseId: string; statementMd: string };
 
 export function ExercisePlayer(props: Props) {
-  if (props.type === "qcm") return <QcmPlayer data={props.data} />;
-  if (props.type === "quiz") return <QuizPlayer data={props.data} />;
-  return <OpenAnswerPlayer statementMd={props.statementMd} correctionMd={props.correctionMd} />;
+  if (props.type === "qcm") return <QcmPlayer exerciseId={props.exerciseId} questions={props.questions} />;
+  if (props.type === "quiz") return <QuizPlayer exerciseId={props.exerciseId} questions={props.questions} />;
+  return <OpenAnswerPlayer exerciseId={props.exerciseId} statementMd={props.statementMd} />;
 }
 
-function QcmPlayer({ data }: { data: { questions: QcmQuestion[] } }) {
+function QcmPlayer({ exerciseId, questions }: { exerciseId: string; questions: QcmQuestionSafe[] }) {
   const [answers, setAnswers] = useState<Record<number, string>>({});
-  const [corrected, setCorrected] = useState(false);
-  const total = data.questions.length;
-  const score = useMemo(
-    () => data.questions.filter((q) => answers[q.num] && answers[q.num] === q.correctLabel).length,
-    [answers, data.questions],
+  const [result, setResult] = useState<{ score: number; total: number; correctByNum: Record<number, string> } | null>(
+    null,
   );
-  const allAnswered = data.questions.every((q) => answers[q.num]);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState("");
+  const allAnswered = questions.every((q) => answers[q.num]);
+
+  const submit = async () => {
+    setPending(true);
+    setError("");
+    const res = await correctQcm(exerciseId, answers);
+    setPending(false);
+    if ("error" in res) setError(res.error);
+    else setResult(res);
+  };
 
   return (
     <div className="flex flex-col gap-5">
-      {data.questions.map((q) => {
+      {questions.map((q) => {
         const picked = answers[q.num];
+        const correctLabel = result?.correctByNum[q.num];
         return (
           <fieldset key={q.num} className="rounded-2xl border border-line p-4">
             <legend className="px-1 font-bold">
@@ -40,8 +54,8 @@ function QcmPlayer({ data }: { data: { questions: QcmQuestion[] } }) {
             <div className="mt-2 flex flex-col gap-1.5">
               {q.options.map((o) => {
                 const isPicked = picked === o.label;
-                const isCorrect = o.label === q.correctLabel;
-                const showState = corrected && (isPicked || isCorrect);
+                const isCorrect = result ? o.label === correctLabel : false;
+                const showState = result && (isPicked || isCorrect);
                 return (
                   <label
                     key={o.label}
@@ -58,13 +72,13 @@ function QcmPlayer({ data }: { data: { questions: QcmQuestion[] } }) {
                       name={`q-${q.num}`}
                       value={o.label}
                       checked={isPicked}
-                      disabled={corrected}
+                      disabled={!!result}
                       onChange={() => setAnswers((a) => ({ ...a, [q.num]: o.label }))}
                     />
                     <span>
                       {o.label}) {o.text}
                     </span>
-                    {corrected && isCorrect && <span className="ml-auto text-xs font-bold text-brand">✓ Bonne réponse</span>}
+                    {result && isCorrect && <span className="ml-auto text-xs font-bold text-brand">✓ Bonne réponse</span>}
                   </label>
                 );
               })}
@@ -73,19 +87,21 @@ function QcmPlayer({ data }: { data: { questions: QcmQuestion[] } }) {
         );
       })}
 
-      {!corrected ? (
+      {error && <p className="text-sm text-red-600">{error}</p>}
+
+      {!result ? (
         <button
           type="button"
-          disabled={!allAnswered}
-          onClick={() => setCorrected(true)}
+          disabled={!allAnswered || pending}
+          onClick={submit}
           className={`${buttonClass("primary")} self-start disabled:opacity-40`}
         >
-          Corriger
+          {pending ? "Correction..." : "Corriger"}
         </button>
       ) : (
         <div className="card-glow rounded-2xl border border-line bg-surface p-4 text-center">
           <p className="text-2xl font-bold text-brand">
-            {score} / {total}
+            {result.score} / {result.total}
           </p>
           <p className="text-sm text-muted">points obtenus</p>
         </div>
@@ -94,16 +110,27 @@ function QcmPlayer({ data }: { data: { questions: QcmQuestion[] } }) {
   );
 }
 
-function QuizPlayer({ data }: { data: { questions: QuizQuestion[] } }) {
+function QuizPlayer({ exerciseId, questions }: { exerciseId: string; questions: QuizQuestionSafe[] }) {
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [selfMarks, setSelfMarks] = useState<Record<number, boolean>>({});
-  const [revealed, setRevealed] = useState(false);
-  const total = data.questions.length;
+  const [revealedAnswers, setRevealedAnswers] = useState<Record<number, string> | null>(null);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState("");
+  const total = questions.length;
   const score = Object.values(selfMarks).filter(Boolean).length;
+
+  const reveal = async () => {
+    setPending(true);
+    setError("");
+    const res = await revealQuiz(exerciseId);
+    setPending(false);
+    if ("error" in res) setError(res.error);
+    else setRevealedAnswers(res.answersByNum);
+  };
 
   return (
     <div className="flex flex-col gap-4">
-      {data.questions.map((q) => (
+      {questions.map((q) => (
         <div key={q.num} className="rounded-2xl border border-line p-4">
           <p className="font-bold">
             {q.num}. {q.text}
@@ -111,15 +138,15 @@ function QuizPlayer({ data }: { data: { questions: QuizQuestion[] } }) {
           <input
             type="text"
             value={answers[q.num] ?? ""}
-            disabled={revealed}
+            disabled={!!revealedAnswers}
             onChange={(e) => setAnswers((a) => ({ ...a, [q.num]: e.target.value }))}
             placeholder="Ta réponse"
             className="mt-2 min-h-11 w-full rounded-xl border border-line bg-transparent px-3 text-sm"
           />
-          {revealed && (
+          {revealedAnswers && (
             <div className="mt-2 flex items-center justify-between gap-2 rounded-xl bg-brand/10 px-3 py-2 text-sm">
               <span>
-                Réponse attendue : <strong>{q.answer}</strong>
+                Réponse attendue : <strong>{revealedAnswers[q.num]}</strong>
               </span>
               <label className="flex items-center gap-1.5 whitespace-nowrap text-xs font-bold">
                 <input
@@ -134,9 +161,11 @@ function QuizPlayer({ data }: { data: { questions: QuizQuestion[] } }) {
         </div>
       ))}
 
-      {!revealed ? (
-        <button type="button" onClick={() => setRevealed(true)} className={`${buttonClass("primary")} self-start`}>
-          Voir les réponses
+      {error && <p className="text-sm text-red-600">{error}</p>}
+
+      {!revealedAnswers ? (
+        <button type="button" disabled={pending} onClick={reveal} className={`${buttonClass("primary")} self-start`}>
+          {pending ? "Chargement..." : "Voir les réponses"}
         </button>
       ) : (
         <div className="card-glow rounded-2xl border border-line bg-surface p-4 text-center">
@@ -150,10 +179,21 @@ function QuizPlayer({ data }: { data: { questions: QuizQuestion[] } }) {
   );
 }
 
-function OpenAnswerPlayer({ statementMd, correctionMd }: { statementMd: string; correctionMd: string }) {
+function OpenAnswerPlayer({ exerciseId, statementMd }: { exerciseId: string; statementMd: string }) {
   const [answer, setAnswer] = useState("");
-  const [revealed, setRevealed] = useState(false);
+  const [correction, setCorrection] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState("");
   const [selfScore, setSelfScore] = useState<number | "">("");
+
+  const reveal = async () => {
+    setPending(true);
+    setError("");
+    const res = await revealCorrection(exerciseId);
+    setPending(false);
+    if ("error" in res) setError(res.error);
+    else setCorrection(res.correctionMd);
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -173,15 +213,17 @@ function OpenAnswerPlayer({ statementMd, correctionMd }: { statementMd: string; 
         />
       </div>
 
-      {!revealed ? (
-        <button type="button" onClick={() => setRevealed(true)} className={`${buttonClass("primary")} self-start`}>
-          Voir le corrigé
+      {error && <p className="text-sm text-red-600">{error}</p>}
+
+      {correction === null ? (
+        <button type="button" disabled={pending} onClick={reveal} className={`${buttonClass("primary")} self-start`}>
+          {pending ? "Chargement..." : "Voir le corrigé"}
         </button>
       ) : (
         <>
           <div className="rounded-2xl border border-line bg-surface p-4">
             <p className="font-bold text-brand">Corrigé</p>
-            <div className="mt-2">{renderLessonMarkdown(correctionMd)}</div>
+            <div className="mt-2">{renderLessonMarkdown(correction)}</div>
           </div>
           <div className="card-glow flex items-center gap-3 rounded-2xl border border-line bg-surface p-4">
             <label htmlFor="self-score" className="text-sm font-bold">

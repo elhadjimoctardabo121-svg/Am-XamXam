@@ -17,13 +17,15 @@ const TYPE_LABELS: Record<string, string> = {
   autre: "Exercice",
 };
 
+type QcmQuestion = { num: number; text: string; options: { label: string; text: string }[]; correctLabel: string | null };
+type QuizQuestion = { num: number; text: string; answer: string };
+
 type ExerciseRow = {
   id: string;
   title: string;
   type: string;
   statement_md: string;
-  correction_md: string;
-  data: { questions: unknown[] } | null;
+  data: { questions: (QcmQuestion | QuizQuestion)[] } | null;
   chapters: { title: string; subject_id: string; subjects: { code: string; name: string } } | null;
 };
 
@@ -48,9 +50,12 @@ export default async function ExercisePage({ params }: { params: Promise<Params>
   if (!user) redirect(`/connexion?next=/exercices/${id}`);
 
   // RLS (lesson_readable, réutilisée pour les exercices) filtre déjà l'accès.
+  // Ni le corrigé ni les bonnes réponses ne sont demandés ici : ils ne
+  // transitent vers le navigateur qu'au moment où l'élève termine
+  // l'exercice, via une Server Action (src/app/actions/exercises.ts).
   const { data } = await supabase
     .from("exercises")
-    .select("id, title, type, statement_md, correction_md, data, chapters(title, subject_id, subjects(code, name))")
+    .select("id, title, type, statement_md, data, chapters(title, subject_id, subjects(code, name))")
     .eq("id", id)
     .single();
 
@@ -101,14 +106,28 @@ export default async function ExercisePage({ params }: { params: Promise<Params>
       <main className="mx-auto -mt-6 w-full max-w-2xl flex-1 px-4 pb-10">
         <div className="rounded-3xl border border-line bg-surface p-5 sm:p-7">
           {exercise.type === "qcm" && exercise.data ? (
-            <ExercisePlayer type="qcm" data={exercise.data as never} correctionMd={exercise.correction_md} />
+            <ExercisePlayer
+              type="qcm"
+              exerciseId={exercise.id}
+              // Ne jamais transmettre correctLabel au client avant la correction.
+              questions={(exercise.data.questions as QcmQuestion[]).map((q) => ({
+                num: q.num,
+                text: q.text,
+                options: q.options,
+              }))}
+            />
           ) : exercise.type === "quiz" && exercise.data ? (
-            <ExercisePlayer type="quiz" data={exercise.data as never} correctionMd={exercise.correction_md} />
+            <ExercisePlayer
+              type="quiz"
+              exerciseId={exercise.id}
+              // Ne jamais transmettre la réponse attendue avant la révélation.
+              questions={(exercise.data.questions as QuizQuestion[]).map((q) => ({ num: q.num, text: q.text }))}
+            />
           ) : (
             <ExercisePlayer
               type={exercise.type === "dissertation" || exercise.type === "commentaire" ? exercise.type : "autre"}
+              exerciseId={exercise.id}
               statementMd={exercise.statement_md}
-              correctionMd={exercise.correction_md}
             />
           )}
         </div>
