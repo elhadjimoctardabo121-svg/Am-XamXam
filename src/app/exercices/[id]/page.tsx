@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
+import { ExercisePlayer } from "@/components/exercise-player";
 import { ConfigNotice, Logo } from "@/components/ui";
 import { getSupabaseConfig } from "@/lib/env";
-import { renderLessonMarkdown } from "@/lib/markdown";
 import { createClient } from "@/lib/supabase/server";
 
 type Params = { id: string };
@@ -23,6 +23,7 @@ type ExerciseRow = {
   type: string;
   statement_md: string;
   correction_md: string;
+  data: { questions: unknown[] } | null;
   chapters: { title: string; subject_id: string; subjects: { code: string; name: string } } | null;
 };
 
@@ -49,7 +50,7 @@ export default async function ExercisePage({ params }: { params: Promise<Params>
   // RLS (lesson_readable, réutilisée pour les exercices) filtre déjà l'accès.
   const { data } = await supabase
     .from("exercises")
-    .select("id, title, type, statement_md, correction_md, chapters(title, subject_id, subjects(code, name))")
+    .select("id, title, type, statement_md, correction_md, data, chapters(title, subject_id, subjects(code, name))")
     .eq("id", id)
     .single();
 
@@ -98,16 +99,19 @@ export default async function ExercisePage({ params }: { params: Promise<Params>
       </div>
 
       <main className="mx-auto -mt-6 w-full max-w-2xl flex-1 px-4 pb-10">
-        <article className="rounded-3xl border border-line bg-surface p-5 sm:p-7">
-          {renderLessonMarkdown(exercise.statement_md)}
-        </article>
-
-        {exercise.correction_md && (
-          <details className="mt-4 rounded-3xl border border-line bg-surface p-5 sm:p-7">
-            <summary className="cursor-pointer font-bold text-brand">Voir le corrigé</summary>
-            <div className="mt-3">{renderLessonMarkdown(exercise.correction_md)}</div>
-          </details>
-        )}
+        <div className="rounded-3xl border border-line bg-surface p-5 sm:p-7">
+          {exercise.type === "qcm" && exercise.data ? (
+            <ExercisePlayer type="qcm" data={exercise.data as never} correctionMd={exercise.correction_md} />
+          ) : exercise.type === "quiz" && exercise.data ? (
+            <ExercisePlayer type="quiz" data={exercise.data as never} correctionMd={exercise.correction_md} />
+          ) : (
+            <ExercisePlayer
+              type={exercise.type === "dissertation" || exercise.type === "commentaire" ? exercise.type : "autre"}
+              statementMd={exercise.statement_md}
+              correctionMd={exercise.correction_md}
+            />
+          )}
+        </div>
       </main>
     </>
   );
