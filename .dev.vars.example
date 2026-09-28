@@ -1,0 +1,6 @@
+# Copier vers .dev.vars (jamais commité) pour `npm run preview` (aperçu local sur le runtime Cloudflare).
+# Mêmes valeurs que .env.local — voir .env.example.
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+NEXT_PUBLIC_SITE_URL=http://localhost:8788
+NEXT_PUBLIC_APP_NAME=Am-XamXAm

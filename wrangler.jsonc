@@ -1,0 +1,22 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // "name" devient le sous-domaine gratuit : <name>.<compte>.workers.dev (guide pratique, étape 7).
+  "name": "amxamxam",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-09-28",
+  // nodejs_compat : nécessaire pour @supabase/ssr et les bibliothèques qui attendent une API Node.
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  // Explicite : publie sur <name>.<sous-domaine-compte>.workers.dev sans redemander
+  // interactivement à chaque déploiement non-interactif (voir audit technique, section 15).
+  "workers_dev": true,
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    { "binding": "WORKER_SELF_REFERENCE", "service": "amxamxam" }
+  ]
+  // Pas de "vars" ici : les variables NEXT_PUBLIC_* et les secrets sont ajoutés avec
+  // `wrangler secret put <NOM>` (secrets) ou dans le tableau de bord Cloudflare (variables publiques),
+  // jamais commités dans ce fichier (guide pratique, section sécurité).
+}

@@ -1,0 +1,137 @@
+@import "tailwindcss";
+
+/*
+ * Jetons de couleur v2 : on garde l'ADN vert baobab / or soleil / bleu nuit (section 24),
+ * en plus vif et plus contrasté. Vert profond pour les boutons (contraste AA avec du texte blanc),
+ * vert lumineux et or réservés aux ornements et aux fonds sombres.
+ */
+:root {
+  --bg: #fff9ee;
+  --surface: #ffffff;
+  --ink: #0b1b33;
+  --muted: #4a5b73;
+  --brand: #0a7f5f;
+  --brand-ink: #ffffff;
+  --brand-soft: #d9f4e9;
+  --brand-glow: #14d19a;
+  --accent: #ffc83d;
+  --danger: #b93a1b;
+  --line: #eadfc8;
+  /* Couleurs des matières */
+  --histoire: #f59e0b;
+  --geographie: #0ea5c6;
+  --civique: #f0553d;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #081426;
+    --surface: #0f2340;
+    --ink: #f6f1e6;
+    --muted: #b4c2d6;
+    --brand: #2fd6a1;
+    --brand-ink: #062318;
+    --brand-soft: #0f3a34;
+    --brand-glow: #2fe0aa;
+    --accent: #ffc83d;
+    --danger: #ff9a7a;
+    --line: #223a5c;
+    --histoire: #fbbf24;
+    --geographie: #38bdf8;
+    --civique: #ff8a70;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-brand: var(--brand);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-glow: var(--brand-glow);
+  --color-accent: var(--accent);
+  --color-danger: var(--danger);
+  --color-line: var(--line);
+  --color-histoire: var(--histoire);
+  --color-geographie: var(--geographie);
+  --color-civique: var(--civique);
+  --font-sans: var(--font-jakarta), system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+html {
+  color-scheme: light dark;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  line-height: 1.6;
+}
+
+/* Fond sombre spectaculaire, identique en mode clair et sombre : nuit bleue, lueur verte, soleil doré. */
+.hero-bg {
+  background:
+    radial-gradient(60rem 30rem at 85% -10%, rgb(255 200 61 / 0.28), transparent 60%),
+    radial-gradient(50rem 28rem at -10% 110%, rgb(20 209 154 / 0.35), transparent 60%),
+    linear-gradient(165deg, #06122a 0%, #0a2447 55%, #0a5a4a 130%);
+  color: #fff;
+}
+
+/* Texte doré dégradé pour les mots-clés des titres. */
+.text-sun {
+  background: linear-gradient(90deg, #ffe08a, #ffc83d 55%, #ff9f43);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.card-glow {
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.5) inset,
+    0 18px 40px -18px rgb(10 127 95 / 0.35);
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.float {
+  animation: float 6s ease-in-out infinite;
+}
+.rise {
+  animation: rise 0.7s ease-out both;
+}
+.rise-2 {
+  animation: rise 0.7s 0.12s ease-out both;
+}
+.rise-3 {
+  animation: rise 0.7s 0.24s ease-out both;
+}
+
+/* Respecte les préférences de réduction des animations (accessibilité, économie de batterie). */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
