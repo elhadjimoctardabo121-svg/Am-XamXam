@@ -1,0 +1,96 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { connection } from "next/server";
+import { ConfigNotice, Logo } from "@/components/ui";
+import { getSupabaseConfig } from "@/lib/env";
+import { renderLessonMarkdown } from "@/lib/markdown";
+import { createClient } from "@/lib/supabase/server";
+
+type Params = { id: string };
+
+type LessonRow = {
+  id: string;
+  title: string;
+  body_md: string;
+  chapter_id: string;
+  chapters: { title: string; subject_id: string; subjects: { code: string; name: string } } | null;
+};
+
+export const metadata: Metadata = { title: "Leçon" };
+
+export default async function LessonPage({ params }: { params: Promise<Params> }) {
+  await connection();
+  const { id } = await params;
+
+  if (!getSupabaseConfig()) {
+    return (
+      <main className="mx-auto w-full max-w-md flex-1 px-4 py-8">
+        <ConfigNotice />
+      </main>
+    );
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect(`/connexion?next=/lecons/${id}`);
+
+  // RLS (lesson_readable) filtre déjà : publiée ET (gratuite OU abonnement actif).
+  // Si la leçon n'apparaît pas ici, elle est verrouillée ou inexistante — même écran.
+  const { data } = await supabase
+    .from("lessons")
+    .select("id, title, body_md, chapter_id, chapters(title, subject_id, subjects(code, name))")
+    .eq("id", id)
+    .single();
+
+  const lesson = data as LessonRow | null;
+  if (!lesson) {
+    return (
+      <main className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-3 px-4 py-8 text-center">
+        <p className="text-lg font-bold">Contenu non disponible</p>
+        <p className="text-muted">
+          Cette leçon n&apos;existe pas, ou nécessite un abonnement actif pour être consultée.
+        </p>
+        <Link href="/tableau-de-bord" className="font-bold text-brand underline underline-offset-4">
+          Retour au tableau de bord
+        </Link>
+      </main>
+    );
+  }
+
+  const subject = lesson.chapters?.subjects;
+
+  return (
+    <>
+      <div className="hero-bg pb-10">
+        <header className="mx-auto flex w-full max-w-2xl items-center justify-between px-4 py-4">
+          <Link href="/tableau-de-bord" aria-label="Accueil">
+            <Logo tone="light" />
+          </Link>
+          {subject && (
+            <Link
+              href={`/matieres/${subject.code}`}
+              className="text-sm font-bold text-white underline underline-offset-4"
+            >
+              ← {subject.name}
+            </Link>
+          )}
+        </header>
+        <div className="mx-auto w-full max-w-2xl px-4 pt-2">
+          {lesson.chapters?.title && (
+            <p className="rise text-sm font-bold text-white/80">{lesson.chapters.title}</p>
+          )}
+          <h1 className="rise-2 text-2xl font-bold sm:text-3xl">{lesson.title}</h1>
+        </div>
+      </div>
+
+      <main className="mx-auto -mt-6 w-full max-w-2xl flex-1 px-4 pb-10">
+        <article className="rounded-3xl border border-line bg-surface p-5 sm:p-7">
+          {renderLessonMarkdown(lesson.body_md)}
+        </article>
+      </main>
+    </>
+  );
+}

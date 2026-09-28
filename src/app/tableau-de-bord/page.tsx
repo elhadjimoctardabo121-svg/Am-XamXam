@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { signOut } from "@/app/actions/auth";
-import { ConfigNotice, Logo, buttonClass } from "@/components/ui";
+import { ConfigNotice, Logo } from "@/components/ui";
 import { getSupabaseConfig } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 
@@ -70,45 +70,25 @@ export default async function DashboardPage() {
       </div>
 
       <main className="mx-auto -mt-8 flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 pb-10">
-        <section aria-labelledby="seance" className="card-glow rounded-3xl border border-line bg-surface p-5">
-          <h2 id="seance" className="text-lg font-bold">
-            Ta séance du jour
-          </h2>
-          <p className="mt-1 text-muted">
-            Ta première séance apparaîtra ici dès que les chapitres de ta classe seront publiés. La bêta
-            démarre : les contenus arrivent progressivement.
-          </p>
-          <button type="button" disabled className={`${buttonClass("primary")} mt-4`}>
-            Commencer (bientôt disponible)
-          </button>
-        </section>
-
         <section aria-labelledby="progression">
           <h2 id="progression" className="text-lg font-bold">
-            Ma progression
+            Tes matières
           </h2>
           <ul className="mt-3 flex flex-col gap-3">
             {(subjects ?? []).map((s: { code: string; name: string }) => {
               const accent = SUBJECT_ACCENT[s.code] ?? { emoji: "📚", bar: "bg-brand" };
               return (
-                <li key={s.code} className="relative overflow-hidden rounded-2xl border border-line bg-surface p-4 pl-5">
+                <li key={s.code} className="relative overflow-hidden rounded-2xl border border-line bg-surface">
                   <span className={`absolute inset-y-0 left-0 w-1.5 ${accent.bar}`} aria-hidden="true" />
-                  <div className="flex items-center justify-between">
+                  <Link
+                    href={`/matieres/${s.code}`}
+                    className="flex items-center justify-between p-4 pl-5 hover:bg-line/40"
+                  >
                     <span className="font-bold">
                       <span aria-hidden="true">{accent.emoji}</span> {s.name}
                     </span>
-                    <span className="text-sm text-muted">Pas encore commencé</span>
-                  </div>
-                  <div
-                    role="progressbar"
-                    aria-label={`Progression en ${s.name}`}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    aria-valuenow={0}
-                    className="mt-2 h-2 overflow-hidden rounded-full bg-line"
-                  >
-                    <div className={`h-full w-0 ${accent.bar}`} />
-                  </div>
+                    <span className="text-sm text-muted">Voir les chapitres →</span>
+                  </Link>
                 </li>
               );
             })}
