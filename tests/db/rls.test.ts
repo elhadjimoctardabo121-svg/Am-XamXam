@@ -444,6 +444,71 @@ describe("sujets d'examen (BFEM)", () => {
   });
 });
 
+describe("vue subscription_reminders_due (rappels Make)", () => {
+  // ends_at est calculé par décalage de jours depuis maintenant ; la vue
+  // compare des DATES (ends_at::date - current_date), donc on se place en
+  // milieu de journée pour ne jamais tomber pile sur un changement de jour.
+  const insertSub = (daysUntilEnd: number, opts: { status?: string; already?: "7d" | "3d" | "1d" } = {}) =>
+    db.query<{ id: string }>(
+      `insert into public.subscriptions (user_id, plan, status, ends_at, reminder_7d_sent_at, reminder_3d_sent_at, reminder_1d_sent_at)
+       values ($1, 'mensuelle', $2,
+               date_trunc('day', now()) + interval '12 hours' + ($3 || ' days')::interval,
+               $4, $5, $6)
+       returning id`,
+      [
+        USERS.student,
+        opts.status ?? "active",
+        daysUntilEnd,
+        opts.already === "7d" ? new Date().toISOString() : null,
+        opts.already === "3d" ? new Date().toISOString() : null,
+        opts.already === "1d" ? new Date().toISOString() : null,
+      ],
+    );
+
+  it("propose un rappel à J-7, J-3 et J-1, jamais aux autres échéances", async () => {
+    await insertSub(7);
+    await insertSub(3);
+    await insertSub(1);
+    await insertSub(5); // ne doit jamais apparaître
+    await insertSub(0); // expire aujourd'hui : hors périmètre des rappels
+    const due = await rows<{ reminder_kind: string }>(
+      `select reminder_kind from public.subscription_reminders_due order by reminder_kind`,
+    );
+    expect(due.map((r) => r.reminder_kind)).toEqual(["1d", "3d", "7d"]);
+  });
+
+  it("ne propose pas deux fois le même rappel déjà envoyé", async () => {
+    await insertSub(7, { already: "7d" });
+    await insertSub(3, { already: "3d" });
+    await insertSub(1, { already: "1d" });
+    expect(await rows(`select 1 from public.subscription_reminders_due`)).toHaveLength(0);
+  });
+
+  it("ignore les abonnements expirés/annulés", async () => {
+    await insertSub(7, { status: "expired" });
+    await insertSub(3, { status: "cancelled" });
+    expect(await rows(`select 1 from public.subscription_reminders_due`)).toHaveLength(0);
+  });
+
+  it("ne renvoie que le courriel et les champs utiles, pas de données sensibles superflues", async () => {
+    await insertSub(7);
+    const [row] = await rows<Record<string, unknown>>(`select * from public.subscription_reminders_due`);
+    expect(Object.keys(row).sort()).toEqual(
+      ["display_name", "ends_at", "email", "plan", "reminder_kind", "subscription_id", "user_id"].sort(),
+    );
+    expect(row.email).toBe(`${USERS.student}@test.local`);
+  });
+
+  it("un élève ne peut pas lire cette vue (réservée à service_role)", async () => {
+    await insertSub(7);
+    await as(db, USERS.student, async () => {
+      await expect(db.query(`select 1 from public.subscription_reminders_due`)).rejects.toThrow(
+        /permission denied/,
+      );
+    });
+  });
+});
+
 describe("catalogue : écriture et workflow de validation", () => {
   const newChapter = async (status = "draft") =>
     db.query<{ id: string }>(
