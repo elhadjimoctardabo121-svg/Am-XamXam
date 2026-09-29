@@ -445,6 +445,34 @@ describe("sujets d'examen (BFEM)", () => {
     await insertPaper({ year: 2024, position: 2, tier: "premium" });
   });
 
+  it("exam_papers_locked_counts compte les sujets premium masqués, sans révéler leur contenu", async () => {
+    const cid = await classId(db, "3eme");
+    await insertPaper({ year: 2024, position: 1, tier: "free", subject: "histoire" });
+    await insertPaper({ year: 2024, position: 2, tier: "premium", subject: "histoire" });
+    await insertPaper({ year: 2024, position: 3, tier: "premium", subject: "histoire" });
+    await insertPaper({ year: 2023, tier: "premium", subject: "geographie" });
+
+    await as(db, USERS.student, async () => {
+      const r = await rows<{ subject_id: string; year: number; locked_count: number }>(
+        `select * from public.exam_papers_locked_counts($1)`,
+        [cid],
+      );
+      const histoire2024 = r.find((x) => x.year === 2024);
+      const geo2023 = r.find((x) => x.year === 2023);
+      expect(histoire2024?.locked_count).toBe(2);
+      expect(geo2023?.locked_count).toBe(1);
+    });
+
+    // Abonné : plus aucun sujet masqué.
+    await db.query(
+      `insert into public.subscriptions (user_id, plan, ends_at) values ($1, 'annuelle', now() + interval '1 year')`,
+      [USERS.student],
+    );
+    await as(db, USERS.student, async () => {
+      expect(await rows(`select * from public.exam_papers_locked_counts($1)`, [cid])).toEqual([]);
+    });
+  });
+
   it("au plus deux sujets gratuits par matière, un troisième est refusé", async () => {
     await insertPaper({ year: 2024, position: 1, tier: "free", subject: "histoire" });
     await insertPaper({ year: 2024, position: 2, tier: "free", subject: "histoire" });
