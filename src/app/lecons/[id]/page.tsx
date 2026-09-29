@@ -15,6 +15,15 @@ type LessonRow = {
   body_md: string;
   chapter_id: string;
   chapters: { title: string; subject_id: string; subjects: { code: string; name: string } } | null;
+  exercises: { id: string; position: number; type: string; title: string }[];
+};
+
+const EXERCISE_TYPE_LABELS: Record<string, string> = {
+  dissertation: "Dissertation",
+  commentaire: "Commentaire",
+  qcm: "QCM",
+  quiz: "Quiz éclair",
+  autre: "Exercice",
 };
 
 export const metadata: Metadata = { title: "Leçon" };
@@ -41,7 +50,9 @@ export default async function LessonPage({ params }: { params: Promise<Params> }
   // Si la leçon n'apparaît pas ici, elle est verrouillée ou inexistante — même écran.
   const { data } = await supabase
     .from("lessons")
-    .select("id, title, body_md, chapter_id, chapters(title, subject_id, subjects(code, name))")
+    .select(
+      "id, title, body_md, chapter_id, chapters(title, subject_id, subjects(code, name)), exercises(id, position, type, title)",
+    )
     .eq("id", id)
     .single();
 
@@ -90,6 +101,26 @@ export default async function LessonPage({ params }: { params: Promise<Params> }
         <article className="rounded-3xl border border-line bg-surface p-5 sm:p-7">
           {renderLessonMarkdown(lesson.body_md)}
         </article>
+
+        {lesson.exercises.length > 0 && (
+          <section className="mt-4 rounded-3xl border border-line bg-surface p-5 sm:p-7">
+            <h2 className="font-bold">S&apos;entraîner sur cette leçon</h2>
+            <ul className="mt-2 flex flex-wrap gap-2">
+              {[...lesson.exercises]
+                .sort((a, b) => a.position - b.position)
+                .map((ex) => (
+                  <li key={ex.id}>
+                    <Link
+                      href={`/exercices/${ex.id}`}
+                      className="inline-block rounded-full border border-line px-3 py-1 text-xs font-bold hover:bg-line/50"
+                    >
+                      {EXERCISE_TYPE_LABELS[ex.type] ?? ex.type}
+                    </Link>
+                  </li>
+                ))}
+            </ul>
+          </section>
+        )}
       </main>
     </>
   );

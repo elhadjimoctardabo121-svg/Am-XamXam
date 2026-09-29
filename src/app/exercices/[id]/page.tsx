@@ -20,13 +20,16 @@ const TYPE_LABELS: Record<string, string> = {
 type QcmQuestion = { num: number; text: string; options: { label: string; text: string }[]; correctLabel: string | null };
 type QuizQuestion = { num: number; text: string; answer: string };
 
+type ChapterRef = { title: string; subject_id: string; subjects: { code: string; name: string } };
+
 type ExerciseRow = {
   id: string;
   title: string;
   type: string;
   statement_md: string;
   data: { questions: (QcmQuestion | QuizQuestion)[] } | null;
-  chapters: { title: string; subject_id: string; subjects: { code: string; name: string } } | null;
+  chapters: ChapterRef | null;
+  lessons: { title: string; chapters: ChapterRef | null } | null;
 };
 
 export const metadata: Metadata = { title: "Exercice" };
@@ -55,7 +58,9 @@ export default async function ExercisePage({ params }: { params: Promise<Params>
   // l'exercice, via une Server Action (src/app/actions/exercises.ts).
   const { data } = await supabase
     .from("exercises")
-    .select("id, title, type, statement_md, data, chapters(title, subject_id, subjects(code, name))")
+    .select(
+      "id, title, type, statement_md, data, chapters(title, subject_id, subjects(code, name)), lessons(title, chapters(title, subject_id, subjects(code, name)))",
+    )
     .eq("id", id)
     .single();
 
@@ -74,7 +79,10 @@ export default async function ExercisePage({ params }: { params: Promise<Params>
     );
   }
 
-  const subject = exercise.chapters?.subjects;
+  // Un exercice de chapitre porte directement "chapters" ; un exercice de
+  // leçon le porte via "lessons.chapters" (chapter_id est alors null).
+  const chapterTitle = exercise.chapters?.title ?? exercise.lessons?.chapters?.title;
+  const subject = exercise.chapters?.subjects ?? exercise.lessons?.chapters?.subjects;
 
   return (
     <>
@@ -93,8 +101,9 @@ export default async function ExercisePage({ params }: { params: Promise<Params>
           )}
         </header>
         <div className="mx-auto w-full max-w-2xl px-4 pt-2">
-          {exercise.chapters?.title && (
-            <p className="rise text-sm font-bold text-white/80">{exercise.chapters.title}</p>
+          {chapterTitle && <p className="rise text-sm font-bold text-white/80">{chapterTitle}</p>}
+          {exercise.lessons?.title && (
+            <p className="rise text-xs font-bold text-white/60">{exercise.lessons.title}</p>
           )}
           <h1 className="rise-2 text-2xl font-bold sm:text-3xl">{exercise.title}</h1>
           <span className="rise-2 mt-1 inline-block rounded-full bg-white/10 px-3 py-1 text-xs font-bold ring-1 ring-white/25">

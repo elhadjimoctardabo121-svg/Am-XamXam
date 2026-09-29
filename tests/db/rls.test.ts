@@ -298,6 +298,76 @@ describe("catalogue : lecture", () => {
   });
 });
 
+describe("exercices : chapitre ou leçon, jamais les deux", () => {
+  const insertExercise = (opts: { chapterId?: string; lessonId?: string; tier?: string; status?: string }) =>
+    db.query<{ id: string }>(
+      `insert into public.exercises (chapter_id, lesson_id, position, type, title, status, access_tier, reviewed_by)
+       values ($1, $2, 1, 'qcm', 'Exo', $3, $4, $5) returning id`,
+      [
+        opts.chapterId ?? null,
+        opts.lessonId ?? null,
+        opts.status ?? "published",
+        opts.tier ?? "free",
+        USERS.admin,
+      ],
+    );
+
+  it("refuse un exercice sans chapitre ni leçon, ou avec les deux", async () => {
+    const ch = await insertChapter(db, { slug: "ch", class: "3eme" });
+    const les = await insertLesson(db, ch);
+    await expect(insertExercise({})).rejects.toThrow(/exercises_scope_check/);
+    await expect(insertExercise({ chapterId: ch, lessonId: les })).rejects.toThrow(/exercises_scope_check/);
+  });
+
+  it("un exercice de chapitre gratuit est lisible sans compte, un premium est masqué", async () => {
+    const chFree = await insertChapter(db, { slug: "libre", class: "3eme" });
+    await insertExercise({ chapterId: chFree, tier: "free" });
+    const chPrem = await insertChapter(db, { slug: "prem", class: "3eme" });
+    await insertExercise({ chapterId: chPrem, tier: "premium" });
+    await as(db, null, async () => {
+      expect(await rows(`select id from public.exercises`)).toHaveLength(1);
+    });
+  });
+
+  it("un exercice de leçon suit la même règle d'accès (gratuit vs premium, abonnement)", async () => {
+    const ch = await insertChapter(db, { slug: "ch", class: "3eme" });
+    const lesFree = await insertLesson(db, ch, { level: 1, tier: "free" });
+    const lesPrem = await insertLesson(db, ch, { level: 2, tier: "premium" });
+    await insertExercise({ lessonId: lesFree, tier: "free" });
+    await insertExercise({ lessonId: lesPrem, tier: "premium" });
+
+    await as(db, null, async () => {
+      expect(await rows(`select id from public.exercises`)).toHaveLength(1);
+    });
+
+    await db.query(
+      `insert into public.subscriptions (user_id, plan, ends_at) values ($1, 'mensuelle', now() + interval '30 days')`,
+      [USERS.student],
+    );
+    await as(db, USERS.student, async () => {
+      expect(await rows(`select id from public.exercises`)).toHaveLength(2);
+    });
+  });
+
+  it("un exercice de leçon d'un chapitre non publié reste masqué même si la leçon est publiée", async () => {
+    const ch = await insertChapter(db, { slug: "ch", class: "3eme", status: "validated" });
+    const les = await insertLesson(db, ch, { tier: "free" });
+    await insertExercise({ lessonId: les, tier: "free" });
+    await as(db, USERS.student, async () => {
+      expect(await rows(`select id from public.exercises`)).toHaveLength(0);
+    });
+  });
+
+  it("le staff voit les exercices de leçon en brouillon", async () => {
+    const ch = await insertChapter(db, { slug: "ch", class: "3eme" });
+    const les = await insertLesson(db, ch);
+    await insertExercise({ lessonId: les, status: "draft" });
+    await as(db, USERS.editor, async () => {
+      expect(await rows(`select id from public.exercises`)).toHaveLength(1);
+    });
+  });
+});
+
 describe("catalogue : écriture et workflow de validation", () => {
   const newChapter = async (status = "draft") =>
     db.query<{ id: string }>(

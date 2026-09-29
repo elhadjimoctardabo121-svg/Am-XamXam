@@ -28,7 +28,11 @@ export default async function AdminChapterPage({ params }: { params: Promise<Par
   if (!chapter) notFound();
 
   const [{ data: lessons }, { data: exercises }] = await Promise.all([
-    supabase.from("lessons").select("id, level, title, status, access_tier").eq("chapter_id", chapterId).order("level"),
+    supabase
+      .from("lessons")
+      .select("id, level, title, status, access_tier, exercises(id, position, type, title, status, access_tier)")
+      .eq("chapter_id", chapterId)
+      .order("level"),
     supabase
       .from("exercises")
       .select("id, position, type, title, status, access_tier")
@@ -63,13 +67,27 @@ export default async function AdminChapterPage({ params }: { params: Promise<Par
 
       <section>
         <h2 className="font-bold">Leçons</h2>
-        <ul className="mt-2 flex flex-col gap-2">
+        <ul className="mt-2 flex flex-col gap-3">
           {(lessons ?? []).map((l) => (
-            <li key={l.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line bg-surface p-3">
-              <span>
-                Leçon {l.level} — {l.title}
-              </span>
-              <ContentRowForm table="lessons" id={l.id} status={l.status} accessTier={l.access_tier} returnPath={returnPath} />
+            <li key={l.id} className="rounded-xl border border-line bg-surface p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span>
+                  Leçon {l.level} — {l.title}
+                </span>
+                <ContentRowForm table="lessons" id={l.id} status={l.status} accessTier={l.access_tier} returnPath={returnPath} />
+              </div>
+              {l.exercises.length > 0 && (
+                <ul className="mt-2 flex flex-col gap-2 border-t border-line pt-2">
+                  {l.exercises.map((e) => (
+                    <li key={e.id} className="flex flex-wrap items-center justify-between gap-2 pl-4 text-sm">
+                      <span>
+                        Exercice de leçon — {EXERCISE_TYPE_LABELS[e.type] ?? e.type} — {e.title}
+                      </span>
+                      <ContentRowForm table="exercises" id={e.id} status={e.status} accessTier={e.access_tier} returnPath={returnPath} />
+                    </li>
+                  ))}
+                </ul>
+              )}
             </li>
           ))}
           {(lessons ?? []).length === 0 && <li className="text-sm text-muted">Aucune leçon.</li>}
@@ -77,7 +95,7 @@ export default async function AdminChapterPage({ params }: { params: Promise<Par
       </section>
 
       <section>
-        <h2 className="font-bold">Exercices</h2>
+        <h2 className="font-bold">Exercices de chapitre</h2>
         <ul className="mt-2 flex flex-col gap-2">
           {(exercises ?? []).map((e) => (
             <li key={e.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line bg-surface p-3">

@@ -108,7 +108,7 @@ export default async function SubjectPage({ params }: { params: Promise<Params> 
                 ))}
               {chapter.lessons.length === 0 && (
                 <li className="px-2 py-1 text-sm text-muted">
-                  Leçons à venir, ou réservées aux abonnés Am-XamXAm.
+                  Leçon exclusivement réservée aux abonnés Am-XamXAm.
                 </li>
               )}
             </ul>
