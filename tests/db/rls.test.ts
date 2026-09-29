@@ -432,6 +432,16 @@ describe("sujets d'examen (BFEM)", () => {
     await insertPaper({ year: 2024 });
     await expect(insertPaper({ year: 2024 })).rejects.toThrow(/exam_papers_class_id_subject_id_exam_year_key/);
   });
+
+  it("au plus un sujet gratuit à la fois, tous classes/matières confondues", async () => {
+    await insertPaper({ year: 2024, tier: "free", subject: "histoire" });
+    await expect(insertPaper({ year: 2023, tier: "free", subject: "geographie" })).rejects.toThrow(
+      /exam_papers_single_free_idx/,
+    );
+    // Deux sujets premium, eux, cohabitent sans problème.
+    await insertPaper({ year: 2022, tier: "premium", subject: "geographie" });
+    await insertPaper({ year: 2021, tier: "premium", subject: "education-civique" });
+  });
 });
 
 describe("catalogue : écriture et workflow de validation", () => {
