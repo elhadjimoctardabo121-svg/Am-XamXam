@@ -11,6 +11,14 @@ import {
 } from "@/app/actions/auth";
 import { redeemAccessCode } from "@/app/actions/access-code";
 import { initiatePayment } from "@/app/actions/payment";
+import {
+  cancelSubscription,
+  createAccessCode,
+  grantSubscription,
+  setUserRole,
+  toggleAccessCode,
+  updateContentRow,
+} from "@/app/actions/admin";
 import { Alert, Field, buttonClass } from "@/components/ui";
 import type { ActionState, FieldErrors } from "@/lib/validation";
 
@@ -260,6 +268,247 @@ export function PlanCheckoutForm({
         </select>
       )}
       <Submit pending={pending}>Payer avec PayTech</Submit>
+    </form>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Admin
+// ---------------------------------------------------------------------------
+
+const selectClass = "min-h-9 rounded-lg border border-line bg-transparent px-2 text-sm";
+const miniButtonClass =
+  "min-h-9 rounded-lg bg-brand px-3 text-xs font-bold text-brand-ink disabled:opacity-60";
+
+function MiniFeedback({ state }: { state: AdminFormState }) {
+  if (state?.error) return <span className="text-xs font-bold text-danger">{state.error}</span>;
+  if (state?.message) return <span className="text-xs font-bold text-brand">{state.message}</span>;
+  return null;
+}
+
+type AdminFormState = { error?: string; message?: string } | undefined;
+
+const STATUS_OPTIONS = [
+  { value: "draft", label: "Brouillon" },
+  { value: "in_review", label: "En relecture" },
+  { value: "validated", label: "Validé" },
+  { value: "published", label: "Publié" },
+  { value: "archived", label: "Archivé" },
+] as const;
+
+const TIER_OPTIONS = [
+  { value: "free", label: "Gratuit" },
+  { value: "premium", label: "Premium" },
+  { value: "pack", label: "Pack matière" },
+  { value: "admin_only", label: "Staff uniquement" },
+] as const;
+
+export function ContentRowForm({
+  table,
+  id,
+  status,
+  accessTier,
+  returnPath,
+}: {
+  table: "chapters" | "lessons" | "exercises";
+  id: string;
+  status: string;
+  accessTier: string;
+  returnPath: string;
+}) {
+  const [state, action, pending] = useActionState(updateContentRow, undefined);
+  return (
+    <form action={action} className="flex flex-wrap items-center gap-2">
+      <input type="hidden" name="table" value={table} />
+      <input type="hidden" name="id" value={id} />
+      <input type="hidden" name="returnPath" value={returnPath} />
+      <select name="status" defaultValue={status} className={selectClass}>
+        {STATUS_OPTIONS.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+      <select name="accessTier" defaultValue={accessTier} className={selectClass}>
+        {TIER_OPTIONS.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+      <button type="submit" disabled={pending} className={miniButtonClass}>
+        {pending ? "…" : "Enregistrer"}
+      </button>
+      <MiniFeedback state={state} />
+    </form>
+  );
+}
+
+export function CreateAccessCodeForm({
+  plans,
+  subjects,
+}: {
+  plans: { id: string; name: string; scope: string }[];
+  subjects: { id: string; name: string }[];
+}) {
+  const [state, action, pending] = useActionState(createAccessCode, undefined);
+  const [scope, setScope] = useState<string>(plans[0]?.scope ?? "classe");
+  return (
+    <form action={action} className="flex flex-col gap-3 rounded-2xl border border-line bg-surface p-4">
+      <h3 className="font-bold">Créer un code</h3>
+      {state?.error && <Alert tone="error">{state.error}</Alert>}
+      {state?.message && <Alert tone="success">{state.message}</Alert>}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="text-sm font-bold">
+          Offre
+          <select
+            name="planId"
+            required
+            className="mt-1 block min-h-11 w-full rounded-xl border border-line bg-transparent px-3"
+            onChange={(e) => setScope(plans.find((p) => p.id === e.target.value)?.scope ?? "classe")}
+          >
+            {plans.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="text-sm font-bold">
+          Type
+          <select name="type" className="mt-1 block min-h-11 w-full rounded-xl border border-line bg-transparent px-3">
+            <option value="abonnement">Abonnement</option>
+            <option value="cadeau">Cadeau</option>
+          </select>
+        </label>
+        {scope === "matiere" && (
+          <label className="text-sm font-bold sm:col-span-2">
+            Matière
+            <select
+              name="subjectId"
+              required
+              className="mt-1 block min-h-11 w-full rounded-xl border border-line bg-transparent px-3"
+            >
+              {subjects.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        <label className="text-sm font-bold">
+          Nombre d&apos;utilisations
+          <input
+            name="maxUses"
+            type="number"
+            min={1}
+            defaultValue={1}
+            className="mt-1 block min-h-11 w-full rounded-xl border border-line bg-transparent px-3"
+          />
+        </label>
+        <label className="text-sm font-bold">
+          Expire le (optionnel)
+          <input
+            name="expiresAt"
+            type="date"
+            className="mt-1 block min-h-11 w-full rounded-xl border border-line bg-transparent px-3"
+          />
+        </label>
+      </div>
+      <button type="submit" disabled={pending} className={buttonClass("primary")}>
+        {pending ? "Un instant…" : "Créer le code"}
+      </button>
+    </form>
+  );
+}
+
+export function ToggleAccessCodeForm({ id, active }: { id: string; active: boolean }) {
+  const [state, action, pending] = useActionState(toggleAccessCode, undefined);
+  return (
+    <form action={action} className="inline-flex items-center gap-2">
+      <input type="hidden" name="id" value={id} />
+      <input type="hidden" name="nextActive" value={String(!active)} />
+      <button type="submit" disabled={pending} className={miniButtonClass}>
+        {pending ? "…" : active ? "Désactiver" : "Réactiver"}
+      </button>
+      <MiniFeedback state={state} />
+    </form>
+  );
+}
+
+export function SetRoleForm({ userId, role }: { userId: string; role: string }) {
+  const [state, action, pending] = useActionState(setUserRole, undefined);
+  return (
+    <form action={action} className="flex flex-wrap items-center gap-2">
+      <input type="hidden" name="userId" value={userId} />
+      <select name="role" defaultValue={role} className={selectClass}>
+        <option value="student">Élève</option>
+        <option value="parent">Parent</option>
+        <option value="teacher">Enseignant</option>
+        <option value="editor">Éditeur</option>
+        <option value="admin">Admin</option>
+      </select>
+      <button type="submit" disabled={pending} className={miniButtonClass}>
+        {pending ? "…" : "Changer"}
+      </button>
+      <MiniFeedback state={state} />
+    </form>
+  );
+}
+
+export function GrantSubscriptionForm({
+  userId,
+  plans,
+  subjects,
+}: {
+  userId: string;
+  plans: { id: string; name: string; scope: string }[];
+  subjects: { id: string; name: string }[];
+}) {
+  const [state, action, pending] = useActionState(grantSubscription, undefined);
+  const [scope, setScope] = useState<string>(plans[0]?.scope ?? "classe");
+  return (
+    <form action={action} className="flex flex-wrap items-center gap-2">
+      <input type="hidden" name="userId" value={userId} />
+      <select
+        name="planId"
+        required
+        className={selectClass}
+        onChange={(e) => setScope(plans.find((p) => p.id === e.target.value)?.scope ?? "classe")}
+      >
+        {plans.map((p) => (
+          <option key={p.id} value={p.id}>
+            {p.name}
+          </option>
+        ))}
+      </select>
+      {scope === "matiere" && (
+        <select name="subjectId" required className={selectClass}>
+          {subjects.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
+        </select>
+      )}
+      <button type="submit" disabled={pending} className={miniButtonClass}>
+        {pending ? "…" : "Offrir un abonnement"}
+      </button>
+      <MiniFeedback state={state} />
+    </form>
+  );
+}
+
+export function CancelSubscriptionForm({ id }: { id: string }) {
+  const [state, action, pending] = useActionState(cancelSubscription, undefined);
+  return (
+    <form action={action} className="inline-flex items-center gap-2">
+      <input type="hidden" name="id" value={id} />
+      <button type="submit" disabled={pending} className="min-h-9 rounded-lg border border-danger px-3 text-xs font-bold text-danger disabled:opacity-60">
+        {pending ? "…" : "Annuler"}
+      </button>
+      <MiniFeedback state={state} />
     </form>
   );
 }

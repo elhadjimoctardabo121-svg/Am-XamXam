@@ -165,14 +165,30 @@ describe("données personnelles", () => {
   });
 
   it("un élève ne peut ni créer ni modifier un abonnement", async () => {
+    // Le staff a le droit SQL d'écrire dans subscriptions (geste admin manuel) ;
+    // un élève passe donc le grant mais reste bloqué par RLS (pas de policy
+    // d'insertion pour lui — seules redeem_access_code() et le webhook écrivent).
     await as(db, USERS.student, async () => {
       await expect(
         db.query(
           `insert into public.subscriptions (user_id, plan, ends_at) values ($1, 'annuelle', now() + interval '1 year')`,
           [USERS.student],
         ),
-      ).rejects.toThrow(/permission denied/);
+      ).rejects.toThrow(/row-level security/);
     });
+  });
+
+  it("admin_set_role : réservé à l'admin, ne permet pas l'auto-promotion", async () => {
+    await as(db, USERS.student, async () => {
+      await expect(db.query(`select public.admin_set_role($1, 'admin')`, [USERS.student])).rejects.toThrow(
+        /Réservé aux administrateurs/,
+      );
+    });
+    await as(db, USERS.admin, async () => {
+      await db.query(`select public.admin_set_role($1, 'editor')`, [USERS.student]);
+    });
+    const [p] = await rows<{ role: string }>(`select role from public.profiles where id = $1`, [USERS.student]);
+    expect(p).toEqual({ role: "editor" });
   });
 });
 
