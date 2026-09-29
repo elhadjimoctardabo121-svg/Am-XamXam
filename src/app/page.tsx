@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { HeroArt } from "@/components/art";
 import { ButtonLink, Logo } from "@/components/ui";
 import { BRAND } from "@/lib/brand";
 
@@ -53,9 +52,15 @@ export default function Home() {
             <p className="mt-3 text-sm text-white/70">Inscription gratuite. Pas de carte bancaire.</p>
           </div>
 
-          {/* Aperçu de l'application (illustratif, non interactif) */}
+          {/* Aperçu de l'application (photo illustrative + mockup, non interactifs) */}
           <div className="relative mx-auto w-full max-w-sm" aria-hidden="true">
-            <HeroArt className="pointer-events-none block w-full" />
+            <img
+              src="/images/apercu-eleves.webp"
+              alt=""
+              width={1536}
+              height={1024}
+              className="block aspect-[3/2] w-full rounded-3xl object-cover shadow-xl"
+            />
             <div className="rise-2 card-glow relative z-10 -mt-14 rounded-3xl bg-surface p-4 text-ink ring-1 ring-black/5">
               <p className="text-xs font-bold uppercase tracking-wide text-muted">Aperçu de l&apos;application</p>
               <p className="mt-1 text-lg font-bold">Bonjour Awa 👋</p>
