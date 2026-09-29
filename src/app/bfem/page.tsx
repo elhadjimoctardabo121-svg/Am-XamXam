@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Sujets BFEM" };
 
-type PaperRow = { id: string; year: number; subjects: { name: string } | null };
+type PaperRow = { id: string; year: number; position: number; title: string; subjects: { name: string } | null };
 
 export default async function BfemPage() {
   await connection();
@@ -32,16 +32,22 @@ export default async function BfemPage() {
 
   const { data } = await supabase
     .from("exam_papers")
-    .select("id, year, subjects(name)")
+    .select("id, year, position, title, subjects(name)")
     .eq("class_id", student.class_id)
-    .order("year", { ascending: false });
+    .order("year", { ascending: false })
+    .order("position");
 
   const rows = (data ?? []) as unknown as PaperRow[];
-  const byYear = new Map<number, PaperRow[]>();
+  // Groupe par année puis par matière : plusieurs sujets probables peuvent
+  // exister pour la même (année, matière).
+  const byYear = new Map<number, Map<string, PaperRow[]>>();
   for (const r of rows) {
-    const list = byYear.get(r.year) ?? [];
+    const subjectName = r.subjects?.name ?? "";
+    const bySubject = byYear.get(r.year) ?? new Map<string, PaperRow[]>();
+    const list = bySubject.get(subjectName) ?? [];
     list.push(r);
-    byYear.set(r.year, list);
+    bySubject.set(subjectName, list);
+    byYear.set(r.year, bySubject);
   }
 
   return (
@@ -67,21 +73,26 @@ export default async function BfemPage() {
             Aucun sujet disponible pour l&apos;instant. Reviens bientôt.
           </p>
         )}
-        {[...byYear.entries()].map(([year, papers]) => (
+        {[...byYear.entries()].map(([year, bySubject]) => (
           <section key={year} className="rounded-2xl border border-line bg-surface p-4">
             <h2 className="font-bold">BFEM {year}</h2>
-            <ul className="mt-2 flex flex-wrap gap-2">
-              {papers.map((p) => (
-                <li key={p.id}>
-                  <Link
-                    href={`/bfem/${p.id}`}
-                    className="inline-block rounded-full border border-line px-3 py-1 text-sm font-bold hover:bg-line/50"
-                  >
-                    {p.subjects?.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            {[...bySubject.entries()].map(([subjectName, papers]) => (
+              <div key={subjectName} className="mt-3 first:mt-2">
+                <h3 className="text-sm font-bold text-muted">{subjectName}</h3>
+                <ul className="mt-1 flex flex-col gap-1">
+                  {papers.map((p) => (
+                    <li key={p.id}>
+                      <Link
+                        href={`/bfem/${p.id}`}
+                        className="block rounded-xl px-2 py-2 text-sm hover:bg-line/50"
+                      >
+                        {p.title}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </section>
         ))}
       </main>

@@ -16,6 +16,7 @@ export const metadata: Metadata = { title: "Sujet BFEM" };
 type PaperRow = {
   id: string;
   year: number;
+  title: string;
   statement_md: string;
   subjects: { code: string; name: string } | null;
 };
@@ -42,7 +43,7 @@ export default async function BfemPaperPage({ params }: { params: Promise<Params
   // corrigé n'est demandé au serveur qu'au moment où l'élève le révèle.
   const { data } = await supabase
     .from("exam_papers")
-    .select("id, year, statement_md, subjects(code, name)")
+    .select("id, year, title, statement_md, subjects(code, name)")
     .eq("id", id)
     .single();
 
@@ -61,8 +62,10 @@ export default async function BfemPaperPage({ params }: { params: Promise<Params
           </Link>
         </header>
         <div className="mx-auto w-full max-w-2xl px-4 pt-2">
-          <p className="rise text-sm font-bold text-white/80">BFEM {paper.year}</p>
-          <h1 className="rise-2 text-2xl font-bold sm:text-3xl">{paper.subjects?.name}</h1>
+          <p className="rise text-sm font-bold text-white/80">
+            BFEM {paper.year} · {paper.subjects?.name}
+          </p>
+          <h1 className="rise-2 text-2xl font-bold sm:text-3xl">{paper.title}</h1>
         </div>
       </div>
 

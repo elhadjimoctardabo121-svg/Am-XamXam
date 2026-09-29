@@ -141,20 +141,36 @@ export async function createExamPaper(_prev: AdminActionState | undefined, fd: F
   const classId = String(fd.get("classId") ?? "");
   const subjectId = String(fd.get("subjectId") ?? "");
   const year = Number(fd.get("year") ?? 0);
+  const title = String(fd.get("title") ?? "").trim() || "BFEM";
   const statementMd = String(fd.get("statementMd") ?? "");
   const correctionMd = String(fd.get("correctionMd") ?? "");
   if (!classId || !subjectId || !year) return { error: "Classe, matière et année sont obligatoires." };
 
   const supabase = await createClient();
+
+  // Plusieurs sujets peuvent exister pour la même (classe, matière, année) :
+  // on s'ajoute après le dernier déjà présent plutôt que de forcer position=1.
+  const { data: last } = await supabase
+    .from("exam_papers")
+    .select("position")
+    .eq("class_id", classId)
+    .eq("subject_id", subjectId)
+    .eq("year", year)
+    .order("position", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const position = (last?.position ?? 0) + 1;
+
   const { error } = await supabase.from("exam_papers").insert({
     class_id: classId,
     subject_id: subjectId,
     year,
-    title: "BFEM",
+    position,
+    title,
     statement_md: statementMd,
     correction_md: correctionMd,
   });
-  if (error) return { error: `Échec : ${error.message} (peut-être déjà créé pour cette année/matière ?)` };
+  if (error) return { error: `Échec : ${error.message}` };
 
   revalidatePath("/admin/bfem");
   return { message: "Sujet créé en brouillon — publie-le depuis la liste une fois relu." };

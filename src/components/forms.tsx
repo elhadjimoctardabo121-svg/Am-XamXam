@@ -549,6 +549,14 @@ export function CreateExamPaperForm({
         </label>
       </div>
       <label className="text-sm font-bold">
+        Titre (ex. « Sujet probable 1 — Les résistances africaines… »)
+        <input
+          name="title"
+          required
+          className="mt-1 block min-h-11 w-full rounded-xl border border-line bg-transparent px-3"
+        />
+      </label>
+      <label className="text-sm font-bold">
         Sujet
         <textarea
           name="statementMd"

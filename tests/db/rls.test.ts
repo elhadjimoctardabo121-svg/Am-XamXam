@@ -369,14 +369,21 @@ describe("exercices : chapitre ou leçon, jamais les deux", () => {
 });
 
 describe("sujets d'examen (BFEM)", () => {
-  const insertPaper = async (opts: { year?: number; tier?: string; status?: string; subject?: string }) =>
+  const insertPaper = async (opts: {
+    year?: number;
+    position?: number;
+    tier?: string;
+    status?: string;
+    subject?: string;
+  }) =>
     db.query<{ id: string }>(
-      `insert into public.exam_papers (class_id, subject_id, year, title, status, access_tier, reviewed_by)
-       values ($1, $2, $3, 'BFEM', $4, $5, $6) returning id`,
+      `insert into public.exam_papers (class_id, subject_id, year, position, title, status, access_tier, reviewed_by)
+       values ($1, $2, $3, $4, 'BFEM', $5, $6, $7) returning id`,
       [
         await classId(db, "3eme"),
         await subjectId(db, opts.subject ?? "histoire"),
         opts.year ?? 2024,
+        opts.position ?? 1,
         opts.status ?? "published",
         opts.tier ?? "free",
         USERS.admin,
@@ -428,9 +435,14 @@ describe("sujets d'examen (BFEM)", () => {
     });
   });
 
-  it("un même (classe, matière, examen, année) ne peut pas être dupliqué", async () => {
-    await insertPaper({ year: 2024 });
-    await expect(insertPaper({ year: 2024 })).rejects.toThrow(/exam_papers_class_id_subject_id_exam_year_key/);
+  it("une même position ne peut pas être dupliquée pour la même (classe, matière, examen, année)", async () => {
+    await insertPaper({ year: 2024, position: 1, tier: "premium" });
+    await expect(insertPaper({ year: 2024, position: 1, tier: "premium" })).rejects.toThrow(
+      /exam_papers_position_unique/,
+    );
+    // Une position différente pour la même année est en revanche autorisée
+    // (plusieurs sujets probables par matière et par année).
+    await insertPaper({ year: 2024, position: 2, tier: "premium" });
   });
 
   it("au plus un sujet gratuit à la fois, tous classes/matières confondues", async () => {
@@ -448,10 +460,14 @@ describe("vue subscription_reminders_due (rappels Make)", () => {
   // ends_at est calculé par décalage de jours depuis maintenant ; la vue
   // compare des DATES (ends_at::date - current_date), donc on se place en
   // milieu de journée pour ne jamais tomber pile sur un changement de jour.
+  // starts_at fixé dans le passé (pas "now()") : un abonnement expirant
+  // aujourd'hui même (daysUntilEnd = 0) doit rester valide vis-à-vis de la
+  // contrainte ends_at > starts_at, quelle que soit l'heure d'exécution du test.
   const insertSub = (daysUntilEnd: number, opts: { status?: string; already?: "7d" | "3d" | "1d" } = {}) =>
     db.query<{ id: string }>(
-      `insert into public.subscriptions (user_id, plan, status, ends_at, reminder_7d_sent_at, reminder_3d_sent_at, reminder_1d_sent_at)
+      `insert into public.subscriptions (user_id, plan, status, starts_at, ends_at, reminder_7d_sent_at, reminder_3d_sent_at, reminder_1d_sent_at)
        values ($1, 'mensuelle', $2,
+               now() - interval '60 days',
                date_trunc('day', now()) + interval '12 hours' + ($3 || ' days')::interval,
                $4, $5, $6)
        returning id`,
