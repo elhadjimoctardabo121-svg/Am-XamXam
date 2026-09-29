@@ -366,6 +366,25 @@ describe("exercices : chapitre ou leçon, jamais les deux", () => {
       expect(await rows(`select id from public.exercises`)).toHaveLength(1);
     });
   });
+
+  it("l'accès d'un exercice de leçon est toujours resynchronisé sur celui de sa leçon, même si on tente autre chose", async () => {
+    const ch = await insertChapter(db, { slug: "ch", class: "3eme" });
+    const lesFree = await insertLesson(db, ch, { level: 1, tier: "free" });
+    // On tente d'insérer un exercice 'premium' sur une leçon gratuite : la synchro l'écrase en 'free'.
+    const { rows: inserted } = await insertExercise({ lessonId: lesFree, tier: "premium" });
+    expect(
+      await rows<{ access_tier: string }>(`select access_tier from public.exercises where id = $1`, [
+        inserted[0].id,
+      ]),
+    ).toEqual([{ access_tier: "free" }]);
+
+    // Un exercice de chapitre, lui, garde le tier explicitement choisi (pas concerné par la synchro).
+    const chPrem = await insertChapter(db, { slug: "prem2", class: "3eme" });
+    const { rows: chapEx } = await insertExercise({ chapterId: chPrem, tier: "premium" });
+    expect(
+      await rows<{ access_tier: string }>(`select access_tier from public.exercises where id = $1`, [chapEx[0].id]),
+    ).toEqual([{ access_tier: "premium" }]);
+  });
 });
 
 describe("sujets d'examen (BFEM)", () => {
