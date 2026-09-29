@@ -445,13 +445,16 @@ describe("sujets d'examen (BFEM)", () => {
     await insertPaper({ year: 2024, position: 2, tier: "premium" });
   });
 
-  it("au plus un sujet gratuit à la fois, tous classes/matières confondues", async () => {
-    await insertPaper({ year: 2024, tier: "free", subject: "histoire" });
-    await expect(insertPaper({ year: 2023, tier: "free", subject: "geographie" })).rejects.toThrow(
-      /exam_papers_single_free_idx/,
-    );
-    // Deux sujets premium, eux, cohabitent sans problème.
-    await insertPaper({ year: 2022, tier: "premium", subject: "geographie" });
+  it("au plus deux sujets gratuits par matière, un troisième est refusé", async () => {
+    await insertPaper({ year: 2024, position: 1, tier: "free", subject: "histoire" });
+    await insertPaper({ year: 2024, position: 2, tier: "free", subject: "histoire" });
+    await expect(
+      insertPaper({ year: 2024, position: 3, tier: "free", subject: "histoire" }),
+    ).rejects.toThrow(/Au plus deux sujets gratuits par matière/);
+    // Une autre matière a droit à ses propres deux sujets gratuits, indépendamment.
+    await insertPaper({ year: 2023, tier: "free", subject: "geographie" });
+    await insertPaper({ year: 2022, position: 2, tier: "free", subject: "geographie" });
+    // Le reste (premium) n'est jamais limité.
     await insertPaper({ year: 2021, tier: "premium", subject: "education-civique" });
   });
 });
@@ -559,6 +562,79 @@ describe("assistant IA : quota quotidien", () => {
       await expect(
         db.query(`insert into public.ai_usage (user_id, message_count) values ($1, 999)`, [USERS.student]),
       ).rejects.toThrow(/permission denied/);
+    });
+  });
+});
+
+describe("verrou par appareil", () => {
+  it("un appareil non enregistré n'est pas de confiance ; l'enregistrer le rend de confiance", async () => {
+    await as(db, USERS.student, async () => {
+      expect(await rows(`select public.is_device_trusted('device-a') as t`)).toEqual([{ t: false }]);
+      await db.query(`select public.register_trusted_device('device-a')`);
+      expect(await rows(`select public.is_device_trusted('device-a') as t`)).toEqual([{ t: true }]);
+      expect(await rows(`select public.is_device_trusted('device-b') as t`)).toEqual([{ t: false }]);
+    });
+  });
+
+  it("enregistrer un nouvel appareil remplace l'ancien (un seul appareil de confiance à la fois)", async () => {
+    await as(db, USERS.student, async () => {
+      await db.query(`select public.register_trusted_device('device-a')`);
+      await db.query(`select public.register_trusted_device('device-b')`);
+      expect(await rows(`select public.is_device_trusted('device-a') as t`)).toEqual([{ t: false }]);
+      expect(await rows(`select public.is_device_trusted('device-b') as t`)).toEqual([{ t: true }]);
+    });
+  });
+
+  it("confirme un nouvel appareil avec le bon jeton ET le bon appareil, remplace l'ancien", async () => {
+    let token = "";
+    await as(db, USERS.student, async () => {
+      await db.query(`select public.register_trusted_device('device-a')`);
+      token = (await rows<{ request_device_confirmation: string }>(
+        `select public.request_device_confirmation('device-b')`,
+      ))[0].request_device_confirmation;
+    });
+    await as(db, USERS.student, async () => {
+      // Mauvais appareil : le lien n'est pas partageable, même avec le bon jeton.
+      expect(await rows(`select public.confirm_device($1, 'device-c') as ok`, [token])).toEqual([{ ok: false }]);
+      expect(await rows(`select public.is_device_trusted('device-b') as t`)).toEqual([{ t: false }]);
+      // Bon appareil : la confirmation réussit et remplace l'appareil de confiance.
+      expect(await rows(`select public.confirm_device($1, 'device-b') as ok`, [token])).toEqual([{ ok: true }]);
+      expect(await rows(`select public.is_device_trusted('device-b') as t`)).toEqual([{ t: true }]);
+      expect(await rows(`select public.is_device_trusted('device-a') as t`)).toEqual([{ t: false }]);
+    });
+  });
+
+  it("un jeton déjà consommé ne peut pas être réutilisé", async () => {
+    let token = "";
+    await as(db, USERS.student, async () => {
+      token = (await rows<{ request_device_confirmation: string }>(
+        `select public.request_device_confirmation('device-b')`,
+      ))[0].request_device_confirmation;
+      await db.query(`select public.confirm_device($1, 'device-b')`, [token]);
+    });
+    await as(db, USERS.student, async () => {
+      expect(await rows(`select public.confirm_device($1, 'device-b') as ok`, [token])).toEqual([{ ok: false }]);
+    });
+  });
+
+  it("le jeton d'un autre utilisateur ne peut pas être utilisé pour confirmer son propre appareil", async () => {
+    let token = "";
+    await as(db, USERS.student, async () => {
+      token = (await rows<{ request_device_confirmation: string }>(
+        `select public.request_device_confirmation('device-b')`,
+      ))[0].request_device_confirmation;
+    });
+    await as(db, USERS.other, async () => {
+      expect(await rows(`select public.confirm_device($1, 'device-b') as ok`, [token])).toEqual([{ ok: false }]);
+    });
+  });
+
+  it("un élève ne peut pas lire l'appareil de confiance d'un autre compte", async () => {
+    await as(db, USERS.student, async () => {
+      await db.query(`select public.register_trusted_device('device-a')`);
+    });
+    await as(db, USERS.other, async () => {
+      expect(await rows(`select user_id from public.trusted_devices`)).toEqual([]);
     });
   });
 });

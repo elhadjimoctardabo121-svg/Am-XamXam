@@ -4,6 +4,7 @@ import { useState } from "react";
 import { correctQcm, revealQuiz } from "@/app/actions/exercises";
 import { buttonClass } from "@/components/ui";
 import { renderLessonMarkdown } from "@/lib/markdown";
+import { ProtectedContent } from "@/components/protected-content";
 
 type RevealAction = (id: string) => Promise<{ correctionMd: string } | { error: string }>;
 
@@ -222,7 +223,7 @@ function OpenAnswerPlayer({
 
   return (
     <div className="flex flex-col gap-4">
-      <div>{renderLessonMarkdown(statementMd)}</div>
+      <ProtectedContent>{renderLessonMarkdown(statementMd)}</ProtectedContent>
 
       <div>
         <label htmlFor="answer" className="text-sm font-bold">
@@ -260,7 +261,9 @@ function OpenAnswerPlayer({
         <>
           <div className="rounded-2xl border border-line bg-surface p-4">
             <p className="font-bold text-brand">Corrigé</p>
-            <div className="mt-2">{renderLessonMarkdown(correction)}</div>
+            <ProtectedContent>
+              <div className="mt-2">{renderLessonMarkdown(correction)}</div>
+            </ProtectedContent>
           </div>
           <div className="card-glow flex items-center gap-3 rounded-2xl border border-line bg-surface p-4">
             <label htmlFor="self-score" className="text-sm font-bold">

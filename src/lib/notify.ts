@@ -9,7 +9,8 @@
  */
 export type ConfirmationEvent =
   | { eventType: "payment_confirmed"; email: string; displayName: string; planName: string; endsAt: string }
-  | { eventType: "code_activated"; email: string; displayName: string; planName: string; endsAt: string };
+  | { eventType: "code_activated"; email: string; displayName: string; planName: string; endsAt: string }
+  | { eventType: "device_confirmation"; email: string; displayName: string; confirmUrl: string };
 
 export async function notifyMakeConfirmation(event: ConfirmationEvent): Promise<void> {
   const url = process.env.MAKE_CONFIRMATION_WEBHOOK_URL;
@@ -23,8 +24,8 @@ export async function notifyMakeConfirmation(event: ConfirmationEvent): Promise<
         event_type: event.eventType,
         email: event.email,
         display_name: event.displayName,
-        plan_name: event.planName,
-        ends_at: event.endsAt,
+        ...("planName" in event ? { plan_name: event.planName, ends_at: event.endsAt } : {}),
+        ...("confirmUrl" in event ? { confirm_url: event.confirmUrl } : {}),
       }),
     });
   } catch {

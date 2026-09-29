@@ -6,6 +6,7 @@ import { AssistantWidget } from "@/components/assistant-widget";
 import { ConfigNotice, LockedContentNotice, Logo } from "@/components/ui";
 import { getSupabaseConfig } from "@/lib/env";
 import { renderLessonMarkdown } from "@/lib/markdown";
+import { ProtectedContent } from "@/components/protected-content";
 import { createClient } from "@/lib/supabase/server";
 
 type Params = { id: string };
@@ -88,7 +89,7 @@ export default async function LessonPage({ params }: { params: Promise<Params> }
 
       <main className="mx-auto -mt-6 w-full max-w-2xl flex-1 px-4 pb-10">
         <article className="rounded-3xl border border-line bg-surface p-5 sm:p-7">
-          {renderLessonMarkdown(lesson.body_md)}
+          <ProtectedContent>{renderLessonMarkdown(lesson.body_md)}</ProtectedContent>
         </article>
 
         {lesson.exercises.length > 0 && (

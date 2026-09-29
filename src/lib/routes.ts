@@ -2,6 +2,11 @@
 const PROTECTED = ["/onboarding", "/tableau-de-bord", "/mot-de-passe/nouveau", "/matieres", "/lecons", "/exercices", "/code", "/tarifs", "/admin", "/bfem"];
 const GUEST_ONLY = ["/connexion", "/inscription", "/mot-de-passe-oublie"];
 
+/** Sous-ensemble de PROTECTED soumis au verrou par appareil (tout sauf l'admin,
+ *  qui a son propre contrôle staff/admin et ne doit jamais bloquer un membre du staff). */
+export const DEVICE_GATED = PROTECTED.filter((p) => p !== "/admin");
+export const DEVICE_COOKIE = "axa_device";
+
 const matches = (pathname: string, base: string) => pathname === base || pathname.startsWith(`${base}/`);
 
 export type RouteDecision =

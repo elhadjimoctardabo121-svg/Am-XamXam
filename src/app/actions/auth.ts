@@ -1,10 +1,11 @@
 "use server";
 
-import { headers } from "next/headers";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getSupabaseConfig } from "@/lib/env";
-import { safeNext } from "@/lib/routes";
+import { DEVICE_COOKIE, safeNext } from "@/lib/routes";
+import { siteUrl } from "@/lib/site";
 import { createClient } from "@/lib/supabase/server";
 import {
   classSchema,
@@ -26,13 +27,10 @@ const text = (fd: FormData, key: string) => {
   return typeof v === "string" ? v : "";
 };
 
-async function siteUrl() {
-  const configured = process.env.NEXT_PUBLIC_SITE_URL;
-  if (configured) return configured.replace(/\/$/, "");
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host");
-  const proto = h.get("x-forwarded-proto") ?? (host?.startsWith("localhost") ? "http" : "https");
-  return `${proto}://${host}`;
+/** Lie l'appareil courant (cookie posé par proxy.ts) au compte qui vient de se connecter. */
+async function registerCurrentDevice(supabase: Awaited<ReturnType<typeof createClient>>) {
+  const deviceId = (await cookies()).get(DEVICE_COOKIE)?.value;
+  if (deviceId) await supabase.rpc("register_trusted_device", { p_device_id: deviceId });
 }
 
 export async function signUp(_prev: ActionState | undefined, fd: FormData): Promise<ActionState> {
@@ -70,7 +68,10 @@ export async function signUp(_prev: ActionState | undefined, fd: FormData): Prom
   if (error) {
     return { error: error.code === "weak_password" ? WEAK_PASSWORD : GENERIC_ERROR.error, values };
   }
-  if (data.session) redirect("/onboarding");
+  if (data.session) {
+    await registerCurrentDevice(supabase);
+    redirect("/onboarding");
+  }
   return {
     message:
       "Presque fini ! Ouvre l'e-mail que nous venons de t'envoyer et clique sur le lien pour activer ton compte.",
