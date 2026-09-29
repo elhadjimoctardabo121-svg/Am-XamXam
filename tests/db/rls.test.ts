@@ -387,6 +387,51 @@ describe("exercices : chapitre ou leçon, jamais les deux", () => {
   });
 });
 
+describe("ressources complémentaires de leçon", () => {
+  const insertResource = (lessonId: string, opts: { url?: string; position?: number } = {}) =>
+    db.query<{ id: string }>(
+      `insert into public.lesson_resources (lesson_id, type, title, url, position, created_by)
+       values ($1, 'video', 'Ressource', $2, $3, $4) returning id`,
+      [lessonId, opts.url ?? "https://example.org/video", opts.position ?? 1, USERS.admin],
+    );
+
+  it("une ressource suit la visibilité de sa leçon (gratuite vs premium, abonnement)", async () => {
+    const ch = await insertChapter(db, { slug: "ch", class: "3eme" });
+    const lesFree = await insertLesson(db, ch, { level: 1, tier: "free" });
+    const lesPrem = await insertLesson(db, ch, { level: 2, tier: "premium" });
+    await insertResource(lesFree);
+    await insertResource(lesPrem);
+
+    await as(db, null, async () => {
+      expect(await rows(`select id from public.lesson_resources`)).toHaveLength(1);
+    });
+
+    await db.query(
+      `insert into public.subscriptions (user_id, plan, ends_at) values ($1, 'mensuelle', now() + interval '30 days')`,
+      [USERS.student],
+    );
+    await as(db, USERS.student, async () => {
+      expect(await rows(`select id from public.lesson_resources`)).toHaveLength(2);
+    });
+  });
+
+  it("refuse une URL qui ne commence pas par http(s)://", async () => {
+    const ch = await insertChapter(db, { slug: "ch2", class: "3eme" });
+    const les = await insertLesson(db, ch, { tier: "free" });
+    await expect(insertResource(les, { url: "javascript:alert(1)" })).rejects.toThrow(
+      /lesson_resources_url_check/,
+    );
+  });
+
+  it("un élève ne peut pas ajouter directement une ressource (staff seulement)", async () => {
+    const ch = await insertChapter(db, { slug: "ch3", class: "3eme" });
+    const les = await insertLesson(db, ch, { tier: "free" });
+    await as(db, USERS.student, async () => {
+      await expect(insertResource(les)).rejects.toThrow(/row-level security/);
+    });
+  });
+});
+
 describe("sujets d'examen (BFEM)", () => {
   const insertPaper = async (opts: {
     year?: number;

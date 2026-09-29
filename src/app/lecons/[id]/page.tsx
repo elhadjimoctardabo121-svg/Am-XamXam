@@ -18,6 +18,7 @@ type LessonRow = {
   chapter_id: string;
   chapters: { title: string; subject_id: string; subjects: { code: string; name: string } } | null;
   exercises: { id: string; position: number; type: string; title: string }[];
+  lesson_resources: { id: string; position: number; type: string; title: string; url: string }[];
 };
 
 const EXERCISE_TYPE_LABELS: Record<string, string> = {
@@ -26,6 +27,14 @@ const EXERCISE_TYPE_LABELS: Record<string, string> = {
   qcm: "QCM",
   quiz: "Quiz éclair",
   autre: "Exercice",
+};
+
+const RESOURCE_TYPE_ICONS: Record<string, string> = {
+  texte: "📄",
+  image: "🖼️",
+  video: "🎬",
+  audio: "🎧",
+  autre: "🔗",
 };
 
 export const metadata: Metadata = { title: "Leçon" };
@@ -53,7 +62,7 @@ export default async function LessonPage({ params }: { params: Promise<Params> }
   const { data } = await supabase
     .from("lessons")
     .select(
-      "id, title, body_md, chapter_id, chapters(title, subject_id, subjects(code, name)), exercises(id, position, type, title)",
+      "id, title, body_md, chapter_id, chapters(title, subject_id, subjects(code, name)), exercises(id, position, type, title), lesson_resources(id, position, type, title, url)",
     )
     .eq("id", id)
     .single();
@@ -106,6 +115,29 @@ export default async function LessonPage({ params }: { params: Promise<Params> }
                     >
                       {EXERCISE_TYPE_LABELS[ex.type] ?? ex.type}
                     </Link>
+                  </li>
+                ))}
+            </ul>
+          </section>
+        )}
+
+        {lesson.lesson_resources.length > 0 && (
+          <section className="mt-4 rounded-3xl border border-line bg-surface p-5 sm:p-7">
+            <h2 className="font-bold">Pour aller plus loin</h2>
+            <ul className="mt-2 flex flex-col gap-2">
+              {[...lesson.lesson_resources]
+                .sort((a, b) => a.position - b.position)
+                .map((r) => (
+                  <li key={r.id}>
+                    <a
+                      href={r.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 rounded-xl border border-line px-3 py-2 text-sm font-bold hover:bg-line/50"
+                    >
+                      <span aria-hidden="true">{RESOURCE_TYPE_ICONS[r.type] ?? "🔗"}</span>
+                      {r.title}
+                    </a>
                   </li>
                 ))}
             </ul>

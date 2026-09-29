@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ContentRowForm } from "@/components/forms";
+import { ContentRowForm, CreateLessonResourceForm, DeleteLessonResourceForm } from "@/components/forms";
 import { createClient } from "@/lib/supabase/server";
 
 type Params = { chapterId: string };
@@ -14,6 +14,14 @@ const EXERCISE_TYPE_LABELS: Record<string, string> = {
   qcm: "QCM",
   quiz: "Quiz éclair",
   autre: "Exercice",
+};
+
+const RESOURCE_TYPE_LABELS: Record<string, string> = {
+  texte: "Texte",
+  image: "Image",
+  video: "Vidéo",
+  audio: "Audio",
+  autre: "Autre",
 };
 
 export default async function AdminChapterPage({ params }: { params: Promise<Params> }) {
@@ -30,7 +38,9 @@ export default async function AdminChapterPage({ params }: { params: Promise<Par
   const [{ data: lessons }, { data: exercises }] = await Promise.all([
     supabase
       .from("lessons")
-      .select("id, level, title, status, access_tier, exercises(id, position, type, title, status, access_tier)")
+      .select(
+        "id, level, title, status, access_tier, exercises(id, position, type, title, status, access_tier), lesson_resources(id, position, type, title, url)",
+      )
       .eq("chapter_id", chapterId)
       .order("level"),
     supabase
@@ -88,6 +98,24 @@ export default async function AdminChapterPage({ params }: { params: Promise<Par
                   ))}
                 </ul>
               )}
+              <div className="mt-2 border-t border-line pt-2">
+                <p className="pl-4 text-xs font-bold text-muted">Ressources complémentaires</p>
+                {l.lesson_resources.length > 0 && (
+                  <ul className="mt-1 flex flex-col gap-1">
+                    {l.lesson_resources.map((r) => (
+                      <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 pl-4 text-sm">
+                        <span>
+                          {RESOURCE_TYPE_LABELS[r.type] ?? r.type} — {r.title}
+                        </span>
+                        <DeleteLessonResourceForm id={r.id} returnPath={returnPath} />
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <div className="mt-1">
+                  <CreateLessonResourceForm lessonId={l.id} returnPath={returnPath} />
+                </div>
+              </div>
             </li>
           ))}
           {(lessons ?? []).length === 0 && <li className="text-sm text-muted">Aucune leçon.</li>}

@@ -176,6 +176,60 @@ export async function createExamPaper(_prev: AdminActionState | undefined, fd: F
   return { message: "Sujet créé en brouillon — publie-le depuis la liste une fois relu." };
 }
 
+/** Ajoute une ressource complémentaire (lien texte/image/vidéo/audio) à une leçon. */
+export async function createLessonResource(
+  _prev: AdminActionState | undefined,
+  fd: FormData,
+): Promise<AdminActionState> {
+  const lessonId = String(fd.get("lessonId") ?? "");
+  const type = String(fd.get("type") ?? "");
+  const title = String(fd.get("title") ?? "").trim();
+  const url = String(fd.get("url") ?? "").trim();
+  const returnPath = String(fd.get("returnPath") ?? "/admin/contenus");
+  if (!lessonId || !type || !title || !/^https?:\/\//i.test(url)) {
+    return { error: "Titre, type et un lien commençant par http(s):// sont obligatoires." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { data: last } = await supabase
+    .from("lesson_resources")
+    .select("position")
+    .eq("lesson_id", lessonId)
+    .order("position", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const position = (last?.position ?? 0) + 1;
+
+  const { error } = await supabase
+    .from("lesson_resources")
+    .insert({ lesson_id: lessonId, type, title, url, position, created_by: user?.id ?? null });
+  if (error) return { error: `Échec : ${error.message}` };
+
+  revalidatePath(returnPath);
+  return { message: "Ressource ajoutée." };
+}
+
+/** Retire une ressource complémentaire d'une leçon. */
+export async function deleteLessonResource(
+  _prev: AdminActionState | undefined,
+  fd: FormData,
+): Promise<AdminActionState> {
+  const id = String(fd.get("id") ?? "");
+  const returnPath = String(fd.get("returnPath") ?? "/admin/contenus");
+  if (!id) return { error: "Requête invalide." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("lesson_resources").delete().eq("id", id);
+  if (error) return { error: `Échec : ${error.message}` };
+
+  revalidatePath(returnPath);
+  return { message: "Ressource retirée." };
+}
+
 /** Annule un abonnement (erreur, remboursement...). */
 export async function cancelSubscription(_prev: AdminActionState | undefined, fd: FormData): Promise<AdminActionState> {
   const id = String(fd.get("id") ?? "");

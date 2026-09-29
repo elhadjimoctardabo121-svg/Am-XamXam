@@ -15,6 +15,8 @@ import {
   cancelSubscription,
   createAccessCode,
   createExamPaper,
+  createLessonResource,
+  deleteLessonResource,
   grantSubscription,
   setUserRole,
   toggleAccessCode,
@@ -588,6 +590,62 @@ export function CancelSubscriptionForm({ id }: { id: string }) {
       <input type="hidden" name="id" value={id} />
       <button type="submit" disabled={pending} className="min-h-9 rounded-lg border border-danger px-3 text-xs font-bold text-danger disabled:opacity-60">
         {pending ? "…" : "Annuler"}
+      </button>
+      <MiniFeedback state={state} />
+    </form>
+  );
+}
+
+const RESOURCE_TYPE_OPTIONS: { value: string; label: string }[] = [
+  { value: "texte", label: "Texte" },
+  { value: "image", label: "Image" },
+  { value: "video", label: "Vidéo" },
+  { value: "audio", label: "Audio" },
+  { value: "autre", label: "Autre" },
+];
+
+export function CreateLessonResourceForm({ lessonId, returnPath }: { lessonId: string; returnPath: string }) {
+  const [state, action, pending] = useActionState(createLessonResource, undefined);
+  return (
+    <form action={action} className="flex flex-wrap items-center gap-2 pl-4">
+      <input type="hidden" name="lessonId" value={lessonId} />
+      <input type="hidden" name="returnPath" value={returnPath} />
+      <select name="type" defaultValue="texte" className={selectClass}>
+        {RESOURCE_TYPE_OPTIONS.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+      <input
+        name="title"
+        placeholder="Titre de la ressource"
+        required
+        className="min-h-9 rounded-lg border border-line bg-transparent px-2 text-xs"
+      />
+      <input
+        name="url"
+        type="url"
+        placeholder="https://..."
+        required
+        className="min-h-9 min-w-48 flex-1 rounded-lg border border-line bg-transparent px-2 text-xs"
+      />
+      <button type="submit" disabled={pending} className={miniButtonClass}>
+        {pending ? "…" : "Ajouter"}
+      </button>
+      <MiniFeedback state={state} />
+    </form>
+  );
+}
+
+export function DeleteLessonResourceForm({ id, returnPath }: { id: string; returnPath: string }) {
+  const [state, action, pending] = useActionState(deleteLessonResource, undefined);
+  return (
+    <form action={action} className="inline-flex items-center gap-2">
+      <input type="hidden" name="id" value={id} />
+      <input type="hidden" name="returnPath" value={returnPath} />
+      <button type="submit" disabled={pending} className="text-xs font-bold text-danger disabled:opacity-60">
+        {pending ? "…" : "Retirer"}
       </button>
       <MiniFeedback state={state} />
     </form>
