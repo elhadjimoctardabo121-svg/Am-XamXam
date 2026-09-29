@@ -10,6 +10,7 @@ import {
   updatePassword,
 } from "@/app/actions/auth";
 import { redeemAccessCode } from "@/app/actions/access-code";
+import { initiatePayment } from "@/app/actions/payment";
 import { Alert, Field, buttonClass } from "@/components/ui";
 import type { ActionState, FieldErrors } from "@/lib/validation";
 
@@ -223,6 +224,42 @@ export function RedeemCodeForm() {
         hint="Sensible à la casse ignorée : majuscules ou minuscules, ça marche pareil."
       />
       <Submit pending={pending}>Activer</Submit>
+    </form>
+  );
+}
+
+export function PlanCheckoutForm({
+  planId,
+  scope,
+  subjects,
+}: {
+  planId: string;
+  scope: string;
+  subjects: { id: string; code: string; name: string }[];
+}) {
+  const [state, action, pending] = useActionState(initiatePayment, undefined);
+  return (
+    <form action={action} className="mt-4 flex flex-col gap-2">
+      <input type="hidden" name="planId" value={planId} />
+      {state?.error && <Alert tone="error">{state.error}</Alert>}
+      {scope === "matiere" && (
+        <select
+          name="subjectId"
+          required
+          className="min-h-11 rounded-xl border border-line bg-transparent px-3 text-sm"
+          defaultValue=""
+        >
+          <option value="" disabled>
+            Choisis la matière
+          </option>
+          {subjects.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
+        </select>
+      )}
+      <Submit pending={pending}>Payer avec PayTech</Submit>
     </form>
   );
 }
