@@ -1,0 +1,19 @@
+{
+  "name": "Am-XamXAm",
+  "short_name": "Am-XamXAm",
+  "description": "Ton compagnon intelligent pour réussir le BFEM et le BAC.",
+  "start_url": "/tableau-de-bord",
+  "id": "/tableau-de-bord",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#faf6ee",
+  "theme_color": "#0a7f5f",
+  "orientation": "portrait-primary",
+  "lang": "fr",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
