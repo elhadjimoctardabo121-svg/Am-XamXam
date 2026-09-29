@@ -84,7 +84,7 @@ export default async function BfemPage() {
         </header>
         <div className="mx-auto w-full max-w-2xl px-4 pt-4">
           <h1 className="rise text-2xl font-bold sm:text-3xl">Sujets BFEM</h1>
-          <p className="rise-2 mt-1 text-white/80">Sujets des sessions précédentes, avec corrigé.</p>
+          <p className="rise-2 mt-1 text-white/80">Sujets probables, avec corrigé, pour t&apos;entraîner avant l&apos;examen.</p>
         </div>
       </div>
 
@@ -96,7 +96,7 @@ export default async function BfemPage() {
         )}
         {[...byYear.entries()].map(([year, bySubject]) => (
           <section key={year} className="rounded-2xl border border-line bg-surface p-4">
-            <h2 className="font-bold">BFEM {year}</h2>
+            <h2 className="font-bold">Sujets probables</h2>
             {[...bySubject.entries()].map(([subjectName, { papers, lockedCount }]) => (
               <div key={subjectName} className="mt-3 first:mt-2">
                 <h3 className="text-sm font-bold text-muted">{subjectName}</h3>

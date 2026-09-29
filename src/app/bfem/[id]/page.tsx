@@ -62,9 +62,7 @@ export default async function BfemPaperPage({ params }: { params: Promise<Params
           </Link>
         </header>
         <div className="mx-auto w-full max-w-2xl px-4 pt-2">
-          <p className="rise text-sm font-bold text-white/80">
-            BFEM {paper.year} · {paper.subjects?.name}
-          </p>
+          <p className="rise text-sm font-bold text-white/80">Sujet probable · {paper.subjects?.name}</p>
           <h1 className="rise-2 text-2xl font-bold sm:text-3xl">{paper.title}</h1>
         </div>
       </div>
