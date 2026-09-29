@@ -118,6 +118,7 @@ function QuizPlayer({ exerciseId, questions }: { exerciseId: string; questions: 
   const [error, setError] = useState("");
   const total = questions.length;
   const score = Object.values(selfMarks).filter(Boolean).length;
+  const allAnswered = questions.every((q) => (answers[q.num] ?? "").trim().length > 0);
 
   const reveal = async () => {
     setPending(true);
@@ -164,9 +165,19 @@ function QuizPlayer({ exerciseId, questions }: { exerciseId: string; questions: 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       {!revealedAnswers ? (
-        <button type="button" disabled={pending} onClick={reveal} className={`${buttonClass("primary")} self-start`}>
-          {pending ? "Chargement..." : "Voir les réponses"}
-        </button>
+        <div className="flex flex-col items-start gap-1">
+          <button
+            type="button"
+            disabled={!allAnswered || pending}
+            onClick={reveal}
+            className={`${buttonClass("primary")} disabled:opacity-40`}
+          >
+            {pending ? "Chargement..." : "Voir les réponses"}
+          </button>
+          {!allAnswered && (
+            <p className="text-xs text-muted">Réponds à chaque question pour débloquer la correction.</p>
+          )}
+        </div>
       ) : (
         <div className="card-glow rounded-2xl border border-line bg-surface p-4 text-center">
           <p className="text-2xl font-bold text-brand">
@@ -179,12 +190,16 @@ function QuizPlayer({ exerciseId, questions }: { exerciseId: string; questions: 
   );
 }
 
+const MIN_ANSWER_LENGTH = 30;
+
 function OpenAnswerPlayer({ exerciseId, statementMd }: { exerciseId: string; statementMd: string }) {
   const [answer, setAnswer] = useState("");
   const [correction, setCorrection] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const [selfScore, setSelfScore] = useState<number | "">("");
+  const answerLength = answer.trim().length;
+  const canReveal = answerLength >= MIN_ANSWER_LENGTH;
 
   const reveal = async () => {
     setPending(true);
@@ -216,9 +231,21 @@ function OpenAnswerPlayer({ exerciseId, statementMd }: { exerciseId: string; sta
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       {correction === null ? (
-        <button type="button" disabled={pending} onClick={reveal} className={`${buttonClass("primary")} self-start`}>
-          {pending ? "Chargement..." : "Voir le corrigé"}
-        </button>
+        <div className="flex flex-col items-start gap-1">
+          <button
+            type="button"
+            disabled={!canReveal || pending}
+            onClick={reveal}
+            className={`${buttonClass("primary")} disabled:opacity-40`}
+          >
+            {pending ? "Chargement..." : "Voir le corrigé"}
+          </button>
+          {!canReveal && (
+            <p className="text-xs text-muted">
+              Écris ta réponse ({answerLength}/{MIN_ANSWER_LENGTH} caractères) pour débloquer le corrigé.
+            </p>
+          )}
+        </div>
       ) : (
         <>
           <div className="rounded-2xl border border-line bg-surface p-4">
