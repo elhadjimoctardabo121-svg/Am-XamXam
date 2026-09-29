@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { signOut } from "@/app/actions/auth";
+import { AssistantWidget } from "@/components/assistant-widget";
 import { ConfigNotice, Logo } from "@/components/ui";
 import { getSupabaseConfig } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
@@ -110,6 +111,7 @@ export default async function DashboardPage() {
           </Link>
         </section>
       </main>
+      <AssistantWidget />
     </>
   );
 }

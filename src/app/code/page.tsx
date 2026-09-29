@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
+import { AssistantWidget } from "@/components/assistant-widget";
 import { RedeemCodeForm } from "@/components/forms";
 import { ConfigNotice, Logo } from "@/components/ui";
 import { getSupabaseConfig } from "@/lib/env";
@@ -47,6 +48,7 @@ export default async function CodePage() {
           <RedeemCodeForm />
         </div>
       </main>
+      <AssistantWidget />
     </>
   );
 }

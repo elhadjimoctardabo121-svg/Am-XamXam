@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
+import { AssistantWidget } from "@/components/assistant-widget";
 import { ConfigNotice, LockedContentNotice, Logo } from "@/components/ui";
 import { getSupabaseConfig } from "@/lib/env";
 import { renderLessonMarkdown } from "@/lib/markdown";
@@ -110,6 +111,7 @@ export default async function LessonPage({ params }: { params: Promise<Params> }
           </section>
         )}
       </main>
+      <AssistantWidget />
     </>
   );
 }

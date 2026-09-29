@@ -15,7 +15,13 @@
   },
   "services": [
     { "binding": "WORKER_SELF_REFERENCE", "service": "amxamxam" }
-  ]
+  ],
+  // Assistant IA (cahier des charges, section 27) : Cloudflare Workers AI,
+  // déjà inclus dans le compte Cloudflare existant (quota gratuit
+  // quotidien), donc aucun nouveau compte/clé à créer (section 44).
+  "ai": {
+    "binding": "AI"
+  }
   // Pas de "vars" ici : les variables NEXT_PUBLIC_* et les secrets sont ajoutés avec
   // `wrangler secret put <NOM>` (secrets) ou dans le tableau de bord Cloudflare (variables publiques),
   // jamais commités dans ce fichier (guide pratique, section sécurité).

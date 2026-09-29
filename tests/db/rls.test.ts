@@ -509,6 +509,44 @@ describe("vue subscription_reminders_due (rappels Make)", () => {
   });
 });
 
+describe("assistant IA : quota quotidien", () => {
+  it("incrémente le compteur du jour à chaque appel, un par utilisateur", async () => {
+    await as(db, USERS.student, async () => {
+      const r1 = await rows<{ message_count: number }>(`select * from public.increment_ai_usage()`);
+      expect(r1[0].message_count).toBe(1);
+      const r2 = await rows<{ message_count: number }>(`select * from public.increment_ai_usage()`);
+      expect(r2[0].message_count).toBe(2);
+    });
+    await as(db, USERS.other, async () => {
+      const r = await rows<{ message_count: number }>(`select * from public.increment_ai_usage()`);
+      expect(r[0].message_count).toBe(1); // compteur indépendant de celui de USERS.student
+    });
+  });
+
+  it("un élève ne voit que son propre compteur, un admin voit tout", async () => {
+    await as(db, USERS.student, async () => {
+      await db.query(`select public.increment_ai_usage()`);
+    });
+    await as(db, USERS.other, async () => {
+      await db.query(`select public.increment_ai_usage()`);
+    });
+    await as(db, USERS.student, async () => {
+      expect(await rows(`select user_id from public.ai_usage`)).toEqual([{ user_id: USERS.student }]);
+    });
+    await as(db, USERS.admin, async () => {
+      expect(await rows(`select user_id from public.ai_usage`)).toHaveLength(2);
+    });
+  });
+
+  it("un élève ne peut pas écrire directement dans ai_usage (seule la fonction le peut)", async () => {
+    await as(db, USERS.student, async () => {
+      await expect(
+        db.query(`insert into public.ai_usage (user_id, message_count) values ($1, 999)`, [USERS.student]),
+      ).rejects.toThrow(/permission denied/);
+    });
+  });
+});
+
 describe("catalogue : écriture et workflow de validation", () => {
   const newChapter = async (status = "draft") =>
     db.query<{ id: string }>(

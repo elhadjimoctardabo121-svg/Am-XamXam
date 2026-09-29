@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { revealCorrection } from "@/app/actions/exercises";
 import { ExercisePlayer } from "@/components/exercise-player";
+import { AssistantWidget } from "@/components/assistant-widget";
 import { ConfigNotice, LockedContentNotice, Logo } from "@/components/ui";
 import { getSupabaseConfig } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
@@ -131,6 +132,7 @@ export default async function ExercisePage({ params }: { params: Promise<Params>
           )}
         </div>
       </main>
+      <AssistantWidget />
     </>
   );
 }
