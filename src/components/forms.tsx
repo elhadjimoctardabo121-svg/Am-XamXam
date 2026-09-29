@@ -9,6 +9,7 @@ import {
   signUp,
   updatePassword,
 } from "@/app/actions/auth";
+import { redeemAccessCode } from "@/app/actions/access-code";
 import { Alert, Field, buttonClass } from "@/components/ui";
 import type { ActionState, FieldErrors } from "@/lib/validation";
 
@@ -200,6 +201,28 @@ export function ClassPicker() {
         )}
       </fieldset>
       <Submit pending={pending}>Continuer</Submit>
+    </form>
+  );
+}
+
+export function RedeemCodeForm() {
+  const [state, action, pending] = useActionState(redeemAccessCode, undefined);
+  return (
+    <form action={action} className="flex flex-col gap-4" noValidate>
+      {state?.error && <Alert tone="error">{state.error}</Alert>}
+      {state?.success && (
+        <Alert tone="success">
+          Code activé ! « {state.success.planName} » est actif jusqu&apos;au{" "}
+          {new Date(state.success.endsAt).toLocaleDateString("fr-FR")}.
+        </Alert>
+      )}
+      <Field
+        label="Code"
+        name="code"
+        autoComplete="off"
+        hint="Sensible à la casse ignorée : majuscules ou minuscules, ça marche pareil."
+      />
+      <Submit pending={pending}>Activer</Submit>
     </form>
   );
 }
