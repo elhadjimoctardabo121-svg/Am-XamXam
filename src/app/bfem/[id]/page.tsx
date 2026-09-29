@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { revealExamPaperCorrection } from "@/app/actions/exam-papers";
 import { ExercisePlayer } from "@/components/exercise-player";
-import { ConfigNotice, Logo } from "@/components/ui";
+import { ConfigNotice, LockedContentNotice, Logo } from "@/components/ui";
 import { getSupabaseConfig } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 
@@ -46,19 +46,7 @@ export default async function BfemPaperPage({ params }: { params: Promise<Params
     .single();
 
   const paper = data as PaperRow | null;
-  if (!paper) {
-    return (
-      <main className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-3 px-4 py-8 text-center">
-        <p className="text-lg font-bold">Contenu non disponible</p>
-        <p className="text-muted">
-          Ce sujet n&apos;existe pas, ou nécessite un abonnement actif pour être consulté.
-        </p>
-        <Link href="/bfem" className="font-bold text-brand underline underline-offset-4">
-          Retour aux sujets BFEM
-        </Link>
-      </main>
-    );
-  }
+  if (!paper) return <LockedContentNotice />;
 
   return (
     <>

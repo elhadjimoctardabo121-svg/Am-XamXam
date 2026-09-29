@@ -107,13 +107,19 @@ export default async function SubjectPage({ params }: { params: Promise<Params> 
                   </li>
                 ))}
               {chapter.lessons.length === 0 && (
-                <li className="px-2 py-1 text-sm text-muted">
-                  Leçon exclusivement réservée aux abonnés Am-XamXAm.
+                <li>
+                  <Link
+                    href="/tarifs"
+                    className="flex items-center justify-between rounded-xl bg-brand-soft px-2 py-2 text-sm font-bold hover:brightness-95"
+                  >
+                    <span aria-hidden="true">🔒</span> Leçon exclusivement réservée aux abonnés Am-XamXAm
+                    <span className="text-brand">Débloquer →</span>
+                  </Link>
                 </li>
               )}
             </ul>
 
-            {chapter.exercises.length > 0 && (
+            {chapter.exercises.length > 0 ? (
               <>
                 <h3 className="mt-3 text-sm font-bold text-muted">Exercices</h3>
                 <ul className="mt-1 flex flex-wrap gap-2">
@@ -131,6 +137,14 @@ export default async function SubjectPage({ params }: { params: Promise<Params> 
                     ))}
                 </ul>
               </>
+            ) : (
+              <Link
+                href="/tarifs"
+                className="mt-3 flex items-center justify-between rounded-xl bg-brand-soft px-2 py-2 text-sm font-bold hover:brightness-95"
+              >
+                <span aria-hidden="true">🔒</span> Exercices réservés aux abonnés Am-XamXAm
+                <span className="text-brand">Débloquer →</span>
+              </Link>
             )}
           </section>
         ))}

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
-import { ConfigNotice, Logo } from "@/components/ui";
+import { ConfigNotice, LockedContentNotice, Logo } from "@/components/ui";
 import { getSupabaseConfig } from "@/lib/env";
 import { renderLessonMarkdown } from "@/lib/markdown";
 import { createClient } from "@/lib/supabase/server";
@@ -57,19 +57,7 @@ export default async function LessonPage({ params }: { params: Promise<Params> }
     .single();
 
   const lesson = data as LessonRow | null;
-  if (!lesson) {
-    return (
-      <main className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-3 px-4 py-8 text-center">
-        <p className="text-lg font-bold">Contenu non disponible</p>
-        <p className="text-muted">
-          Cette leçon n&apos;existe pas, ou nécessite un abonnement actif pour être consultée.
-        </p>
-        <Link href="/tableau-de-bord" className="font-bold text-brand underline underline-offset-4">
-          Retour au tableau de bord
-        </Link>
-      </main>
-    );
-  }
+  if (!lesson) return <LockedContentNotice />;
 
   const subject = lesson.chapters?.subjects;
 

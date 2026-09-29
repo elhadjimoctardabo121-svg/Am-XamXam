@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { revealCorrection } from "@/app/actions/exercises";
 import { ExercisePlayer } from "@/components/exercise-player";
-import { ConfigNotice, Logo } from "@/components/ui";
+import { ConfigNotice, LockedContentNotice, Logo } from "@/components/ui";
 import { getSupabaseConfig } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 
@@ -66,19 +66,7 @@ export default async function ExercisePage({ params }: { params: Promise<Params>
     .single();
 
   const exercise = data as ExerciseRow | null;
-  if (!exercise) {
-    return (
-      <main className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-3 px-4 py-8 text-center">
-        <p className="text-lg font-bold">Contenu non disponible</p>
-        <p className="text-muted">
-          Cet exercice n&apos;existe pas, ou nécessite un abonnement actif pour être consulté.
-        </p>
-        <Link href="/tableau-de-bord" className="font-bold text-brand underline underline-offset-4">
-          Retour au tableau de bord
-        </Link>
-      </main>
-    );
-  }
+  if (!exercise) return <LockedContentNotice />;
 
   // Un exercice de chapitre porte directement "chapters" ; un exercice de
   // leçon le porte via "lessons.chapters" (chapter_id est alors null).

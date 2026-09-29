@@ -132,6 +132,33 @@ export function Alert({ tone, children }: { tone: "error" | "success" | "info"; 
   );
 }
 
+/** Écran affiché quand un contenu n'existe pas OU est verrouillé (RLS) : mêmes mots pour les
+ *  deux cas (on ne révèle pas lequel), mais toujours un vrai chemin vers l'abonnement/le code. */
+export function LockedContentNotice() {
+  return (
+    <main className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-4 px-4 py-8 text-center">
+      <span className="text-4xl" aria-hidden="true">
+        🔒
+      </span>
+      <p className="text-lg font-bold">Contenu non disponible</p>
+      <p className="text-muted">
+        Ce contenu n&apos;existe pas, ou nécessite un abonnement actif pour être consulté.
+      </p>
+      <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+        <ButtonLink href="/tarifs" variant="primary">
+          Voir les abonnements
+        </ButtonLink>
+        <ButtonLink href="/code" variant="secondary">
+          J&apos;ai un code
+        </ButtonLink>
+      </div>
+      <Link href="/tableau-de-bord" className="text-sm font-bold text-brand underline underline-offset-4">
+        Retour au tableau de bord
+      </Link>
+    </main>
+  );
+}
+
 /** Affiché sur les pages qui dépendent de Supabase quand les variables d'environnement manquent. */
 export function ConfigNotice() {
   if (getSupabaseConfig()) return null;
