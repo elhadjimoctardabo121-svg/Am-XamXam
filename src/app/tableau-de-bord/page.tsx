@@ -94,6 +94,21 @@ export default async function DashboardPage() {
             })}
           </ul>
         </section>
+
+        <section aria-labelledby="bfem">
+          <h2 id="bfem" className="text-lg font-bold">
+            Entraînement examen
+          </h2>
+          <Link
+            href="/bfem"
+            className="mt-3 flex items-center justify-between rounded-2xl border border-line bg-surface p-4 hover:bg-line/40"
+          >
+            <span className="font-bold">
+              <span aria-hidden="true">📄</span> Sujets BFEM
+            </span>
+            <span className="text-sm text-muted">Voir les sessions précédentes →</span>
+          </Link>
+        </section>
       </main>
     </>
   );

@@ -368,6 +368,72 @@ describe("exercices : chapitre ou leçon, jamais les deux", () => {
   });
 });
 
+describe("sujets d'examen (BFEM)", () => {
+  const insertPaper = async (opts: { year?: number; tier?: string; status?: string; subject?: string }) =>
+    db.query<{ id: string }>(
+      `insert into public.exam_papers (class_id, subject_id, year, title, status, access_tier, reviewed_by)
+       values ($1, $2, $3, 'BFEM', $4, $5, $6) returning id`,
+      [
+        await classId(db, "3eme"),
+        await subjectId(db, opts.subject ?? "histoire"),
+        opts.year ?? 2024,
+        opts.status ?? "published",
+        opts.tier ?? "free",
+        USERS.admin,
+      ],
+    );
+
+  it("un sujet gratuit publié est lisible sans compte, un premium est masqué", async () => {
+    await insertPaper({ year: 2024, tier: "free" });
+    await insertPaper({ year: 2023, tier: "premium" });
+    await as(db, null, async () => {
+      const r = await rows<{ year: number }>(`select year from public.exam_papers`);
+      expect(r).toEqual([{ year: 2024 }]);
+    });
+  });
+
+  it("un abonnement actif ouvre les sujets premium de la classe/matière", async () => {
+    await insertPaper({ year: 2022, tier: "premium" });
+    await db.query(
+      `insert into public.subscriptions (user_id, plan, ends_at) values ($1, 'annuelle', now() + interval '1 year')`,
+      [USERS.student],
+    );
+    await as(db, USERS.student, async () => {
+      expect(await rows(`select id from public.exam_papers`)).toHaveLength(1);
+    });
+    await as(db, USERS.other, async () => {
+      expect(await rows(`select id from public.exam_papers`)).toHaveLength(0);
+    });
+  });
+
+  it("un brouillon n'est jamais lisible par un élève, même avec abonnement", async () => {
+    await insertPaper({ year: 2021, tier: "free", status: "draft" });
+    await as(db, USERS.student, async () => {
+      expect(await rows(`select id from public.exam_papers`)).toHaveLength(0);
+    });
+  });
+
+  it("le staff voit les brouillons et un élève ne peut pas en créer", async () => {
+    await insertPaper({ year: 2020, status: "draft" });
+    await as(db, USERS.editor, async () => {
+      expect(await rows(`select id from public.exam_papers`)).toHaveLength(1);
+    });
+    await as(db, USERS.student, async () => {
+      await expect(
+        db.query(
+          `insert into public.exam_papers (class_id, subject_id, year, title) values ($1, $2, 2019, 'BFEM')`,
+          [await classId(db, "3eme"), await subjectId(db)],
+        ),
+      ).rejects.toThrow(/row-level security/);
+    });
+  });
+
+  it("un même (classe, matière, examen, année) ne peut pas être dupliqué", async () => {
+    await insertPaper({ year: 2024 });
+    await expect(insertPaper({ year: 2024 })).rejects.toThrow(/exam_papers_class_id_subject_id_exam_year_key/);
+  });
+});
+
 describe("catalogue : écriture et workflow de validation", () => {
   const newChapter = async (status = "draft") =>
     db.query<{ id: string }>(

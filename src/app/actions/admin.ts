@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export type AdminActionState = { error?: string; message?: string };
 
-const CONTENT_TABLES = ["chapters", "lessons", "exercises"] as const;
+const CONTENT_TABLES = ["chapters", "lessons", "exercises", "exam_papers"] as const;
 type ContentTable = (typeof CONTENT_TABLES)[number];
 
 /** Change le statut de workflow et/ou l'accès (gratuit/premium) d'un chapitre, d'une leçon ou d'un exercice.
@@ -131,6 +131,33 @@ export async function grantSubscription(_prev: AdminActionState | undefined, fd:
 
   revalidatePath("/admin/utilisateurs");
   return { message: "Abonnement accordé." };
+}
+
+/** Crée un sujet BFEM (brouillon) : la rédaction du sujet/corrigé se fait ensuite via
+ *  la mise à jour directe en base ou une future page d'édition ; ce formulaire couvre
+ *  la création initiale, indispensable puisqu'il n'existe pas d'import SQL pour cette
+ *  rubrique tant que le contenu source n'est pas disponible. */
+export async function createExamPaper(_prev: AdminActionState | undefined, fd: FormData): Promise<AdminActionState> {
+  const classId = String(fd.get("classId") ?? "");
+  const subjectId = String(fd.get("subjectId") ?? "");
+  const year = Number(fd.get("year") ?? 0);
+  const statementMd = String(fd.get("statementMd") ?? "");
+  const correctionMd = String(fd.get("correctionMd") ?? "");
+  if (!classId || !subjectId || !year) return { error: "Classe, matière et année sont obligatoires." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("exam_papers").insert({
+    class_id: classId,
+    subject_id: subjectId,
+    year,
+    title: "BFEM",
+    statement_md: statementMd,
+    correction_md: correctionMd,
+  });
+  if (error) return { error: `Échec : ${error.message} (peut-être déjà créé pour cette année/matière ?)` };
+
+  revalidatePath("/admin/bfem");
+  return { message: "Sujet créé en brouillon — publie-le depuis la liste une fois relu." };
 }
 
 /** Annule un abonnement (erreur, remboursement...). */

@@ -9,6 +9,7 @@ import { getSupabaseConfig } from "@/lib/env";
 const NAV = [
   { href: "/admin", label: "Tableau de bord" },
   { href: "/admin/contenus", label: "Contenus" },
+  { href: "/admin/bfem", label: "Sujets BFEM" },
   { href: "/admin/codes", label: "Codes d'accès" },
   { href: "/admin/utilisateurs", label: "Utilisateurs" },
   { href: "/admin/paiements", label: "Paiements" },

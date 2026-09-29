@@ -14,6 +14,7 @@ import { initiatePayment } from "@/app/actions/payment";
 import {
   cancelSubscription,
   createAccessCode,
+  createExamPaper,
   grantSubscription,
   setUserRole,
   toggleAccessCode,
@@ -310,7 +311,7 @@ export function ContentRowForm({
   accessTier,
   returnPath,
 }: {
-  table: "chapters" | "lessons" | "exercises";
+  table: "chapters" | "lessons" | "exercises" | "exam_papers";
   id: string;
   status: string;
   accessTier: string;
@@ -496,6 +497,78 @@ export function GrantSubscriptionForm({
         {pending ? "…" : "Offrir un abonnement"}
       </button>
       <MiniFeedback state={state} />
+    </form>
+  );
+}
+
+export function CreateExamPaperForm({
+  classes,
+  subjects,
+}: {
+  classes: { id: string; name: string }[];
+  subjects: { id: string; name: string }[];
+}) {
+  const [state, action, pending] = useActionState(createExamPaper, undefined);
+  return (
+    <form action={action} className="flex flex-col gap-3 rounded-2xl border border-line bg-surface p-4">
+      <h3 className="font-bold">Ajouter un sujet BFEM</h3>
+      {state?.error && <Alert tone="error">{state.error}</Alert>}
+      {state?.message && <Alert tone="success">{state.message}</Alert>}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="text-sm font-bold">
+          Classe
+          <select name="classId" required className="mt-1 block min-h-11 w-full rounded-xl border border-line bg-transparent px-3">
+            {classes.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="text-sm font-bold">
+          Matière
+          <select name="subjectId" required className="mt-1 block min-h-11 w-full rounded-xl border border-line bg-transparent px-3">
+            {subjects.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="text-sm font-bold">
+          Année
+          <input
+            name="year"
+            type="number"
+            min={2000}
+            max={2100}
+            defaultValue={new Date().getFullYear()}
+            required
+            className="mt-1 block min-h-11 w-full rounded-xl border border-line bg-transparent px-3"
+          />
+        </label>
+      </div>
+      <label className="text-sm font-bold">
+        Sujet
+        <textarea
+          name="statementMd"
+          rows={6}
+          placeholder="Texte du sujet..."
+          className="mt-1 block w-full rounded-xl border border-line bg-transparent p-3 text-sm"
+        />
+      </label>
+      <label className="text-sm font-bold">
+        Corrigé
+        <textarea
+          name="correctionMd"
+          rows={6}
+          placeholder="Corrigé..."
+          className="mt-1 block w-full rounded-xl border border-line bg-transparent p-3 text-sm"
+        />
+      </label>
+      <button type="submit" disabled={pending} className={buttonClass("primary")}>
+        {pending ? "Un instant…" : "Créer en brouillon"}
+      </button>
     </form>
   );
 }

@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { correctQcm, revealCorrection, revealQuiz } from "@/app/actions/exercises";
+import { correctQcm, revealQuiz } from "@/app/actions/exercises";
 import { buttonClass } from "@/components/ui";
 import { renderLessonMarkdown } from "@/lib/markdown";
+
+type RevealAction = (id: string) => Promise<{ correctionMd: string } | { error: string }>;
 
 // IMPORTANT : aucune bonne réponse ni corrigé n'est passé en props ici — tout
 // est demandé au serveur (Server Action) au moment où l'élève termine, pour
@@ -15,12 +17,12 @@ type QuizQuestionSafe = { num: number; text: string };
 type Props =
   | { type: "qcm"; exerciseId: string; questions: QcmQuestionSafe[] }
   | { type: "quiz"; exerciseId: string; questions: QuizQuestionSafe[] }
-  | { type: "dissertation" | "commentaire" | "autre"; exerciseId: string; statementMd: string };
+  | { type: "dissertation" | "commentaire" | "autre"; exerciseId: string; statementMd: string; reveal: RevealAction };
 
 export function ExercisePlayer(props: Props) {
   if (props.type === "qcm") return <QcmPlayer exerciseId={props.exerciseId} questions={props.questions} />;
   if (props.type === "quiz") return <QuizPlayer exerciseId={props.exerciseId} questions={props.questions} />;
-  return <OpenAnswerPlayer exerciseId={props.exerciseId} statementMd={props.statementMd} />;
+  return <OpenAnswerPlayer exerciseId={props.exerciseId} statementMd={props.statementMd} reveal={props.reveal} />;
 }
 
 function QcmPlayer({ exerciseId, questions }: { exerciseId: string; questions: QcmQuestionSafe[] }) {
@@ -192,7 +194,15 @@ function QuizPlayer({ exerciseId, questions }: { exerciseId: string; questions: 
 
 const MIN_ANSWER_LENGTH = 30;
 
-function OpenAnswerPlayer({ exerciseId, statementMd }: { exerciseId: string; statementMd: string }) {
+function OpenAnswerPlayer({
+  exerciseId,
+  statementMd,
+  reveal: revealAction,
+}: {
+  exerciseId: string;
+  statementMd: string;
+  reveal: RevealAction;
+}) {
   const [answer, setAnswer] = useState("");
   const [correction, setCorrection] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -204,7 +214,7 @@ function OpenAnswerPlayer({ exerciseId, statementMd }: { exerciseId: string; sta
   const reveal = async () => {
     setPending(true);
     setError("");
-    const res = await revealCorrection(exerciseId);
+    const res = await revealAction(exerciseId);
     setPending(false);
     if ("error" in res) setError(res.error);
     else setCorrection(res.correctionMd);

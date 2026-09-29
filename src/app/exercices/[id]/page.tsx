@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
+import { revealCorrection } from "@/app/actions/exercises";
 import { ExercisePlayer } from "@/components/exercise-player";
 import { ConfigNotice, Logo } from "@/components/ui";
 import { getSupabaseConfig } from "@/lib/env";
@@ -137,6 +138,7 @@ export default async function ExercisePage({ params }: { params: Promise<Params>
               type={exercise.type === "dissertation" || exercise.type === "commentaire" ? exercise.type : "autre"}
               exerciseId={exercise.id}
               statementMd={exercise.statement_md}
+              reveal={revealCorrection}
             />
           )}
         </div>

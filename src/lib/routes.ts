@@ -1,5 +1,5 @@
 /** Routes qui exigent une session, et routes réservées aux visiteurs non connectés. */
-const PROTECTED = ["/onboarding", "/tableau-de-bord", "/mot-de-passe/nouveau", "/matieres", "/lecons", "/exercices", "/code", "/tarifs", "/admin"];
+const PROTECTED = ["/onboarding", "/tableau-de-bord", "/mot-de-passe/nouveau", "/matieres", "/lecons", "/exercices", "/code", "/tarifs", "/admin", "/bfem"];
 const GUEST_ONLY = ["/connexion", "/inscription", "/mot-de-passe-oublie"];
 
 const matches = (pathname: string, base: string) => pathname === base || pathname.startsWith(`${base}/`);
