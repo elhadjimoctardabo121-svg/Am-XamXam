@@ -4,7 +4,9 @@ import type { AiProvider, ChatMessage } from "./provider";
 // Modèle multilingue, correct en français, disponible dans le quota gratuit
 // quotidien de Cloudflare Workers AI (10 000 "neurones"/jour) — déjà inclus
 // dans le compte Cloudflare existant du projet, aucun nouveau service.
-const MODEL = "@cf/meta/llama-3.1-8b-instruct";
+// (llama-3.1-8b-instruct a été déprécié le 30/05/2026 ; voir le catalogue
+// à jour : https://developers.cloudflare.com/workers-ai/models/)
+const MODEL = "@cf/meta/llama-3.2-3b-instruct";
 
 export const cloudflareWorkersAi: AiProvider = {
   async chat(messages, systemPrompt) {

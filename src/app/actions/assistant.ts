@@ -46,7 +46,8 @@ export async function askAssistant(history: ChatMessage[], message: string): Pro
   try {
     const reply = await aiProvider.chat([...history.slice(-8), { role: "user", content: text }], SYSTEM_PROMPT);
     return { reply: reply || "Désolé, je n'ai pas de réponse à te proposer pour l'instant." };
-  } catch {
+  } catch (err) {
+    console.error("askAssistant: aiProvider.chat failed", err);
     return { error: "L'assistant est momentanément indisponible. Réessaie dans un instant." };
   }
 }
