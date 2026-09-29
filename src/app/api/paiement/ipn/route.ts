@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { notifyMakeConfirmation } from "@/lib/notify";
 import { verifyPaytechIpn } from "@/lib/payment/paytech";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -42,10 +43,11 @@ export async function POST(request: NextRequest) {
 
   if (typeEvent !== "sale_complete") return new NextResponse("IPN OK", { status: 200 });
 
-  const { data: plan } = await admin.from("plans").select("code, scope, duration_days").eq("id", payment.plan_id).single();
+  const { data: plan } = await admin.from("plans").select("code, name, scope, duration_days").eq("id", payment.plan_id).single();
   if (!plan) return new NextResponse("IPN OK", { status: 200 });
 
   const { data: student } = await admin.from("students").select("class_id").eq("id", payment.user_id).single();
+  const { data: profile } = await admin.from("profiles").select("email, display_name").eq("id", payment.user_id).single();
 
   let subjectId: string | null = null;
   const customFieldRaw = get("custom_field");
@@ -59,6 +61,8 @@ export async function POST(request: NextRequest) {
 
   await admin.from("payments").update({ status: "success", provider_ref: providerRef, paid_at: new Date().toISOString() }).eq("id", payment.id);
 
+  const endsAt = new Date(Date.now() + plan.duration_days * 24 * 60 * 60 * 1000).toISOString();
+
   await admin.from("subscriptions").insert({
     user_id: payment.user_id,
     class_id: plan.scope === "classe" ? (student?.class_id ?? null) : null,
@@ -67,8 +71,18 @@ export async function POST(request: NextRequest) {
     status: "active",
     source: "payment",
     starts_at: new Date().toISOString(),
-    ends_at: new Date(Date.now() + plan.duration_days * 24 * 60 * 60 * 1000).toISOString(),
+    ends_at: endsAt,
   });
+
+  if (profile?.email) {
+    await notifyMakeConfirmation({
+      eventType: "payment_confirmed",
+      email: profile.email,
+      displayName: profile.display_name || "",
+      planName: plan.name,
+      endsAt,
+    });
+  }
 
   return new NextResponse("IPN OK", { status: 200 });
 }

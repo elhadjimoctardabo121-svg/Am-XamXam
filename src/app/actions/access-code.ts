@@ -1,5 +1,6 @@
 "use server";
 
+import { notifyMakeConfirmation } from "@/lib/notify";
 import { createClient } from "@/lib/supabase/server";
 
 export type RedeemState = { error?: string; success?: { planName: string; endsAt: string } };
@@ -20,5 +21,20 @@ export async function redeemAccessCode(_prev: RedeemState | undefined, fd: FormD
   }
 
   const row = data as { plan_name: string; ends_at: string };
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user?.email) {
+    const { data: profile } = await supabase.from("profiles").select("display_name").eq("id", user.id).single();
+    await notifyMakeConfirmation({
+      eventType: "code_activated",
+      email: user.email,
+      displayName: profile?.display_name || "",
+      planName: row.plan_name,
+      endsAt: row.ends_at,
+    });
+  }
+
   return { success: { planName: row.plan_name, endsAt: row.ends_at } };
 }
