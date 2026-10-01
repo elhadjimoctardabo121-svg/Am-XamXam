@@ -1,6 +1,6 @@
 # Am-XamXAm — Conditions d'utilisation et Politique de confidentialité (brouillon)
 
-> **Statut : brouillon de travail, pas un texte juridique définitif.** Les pages en ligne (`/conditions` et `/confidentialite`) affichent aujourd'hui la même réserve : ce document doit être relu et validé par un juriste sénégalais avant d'être considéré comme opposable, en particulier parce que (1) des paiements réels sont déjà collectés via PayTech, et (2) la plateforme accueille des mineurs. Ce texte reprend fidèlement ce que l'application fait réellement — il ne doit pas être publié tel quel sans cette relecture.
+> **Statut : brouillon de travail, pas un texte juridique définitif.** Les pages en ligne (`/conditions` et `/confidentialite`) affichent aujourd'hui la même réserve : ce document doit être relu et validé par un juriste sénégalais avant d'être considéré comme opposable, en particulier parce que (1) des paiements réels sont négociés via WhatsApp puis activés par code, et (2) la plateforme accueille des mineurs. Ce texte reprend fidèlement ce que l'application fait réellement — il ne doit pas être publié tel quel sans cette relecture.
 
 ---
 
@@ -27,7 +27,7 @@ Les présentes conditions régissent l'utilisation de la plateforme Am-XamXAm (l
 
 - Certains contenus sont accessibles gratuitement (dont, à ce jour, deux sujets BFEM par matière) ; l'accès complet nécessite un abonnement payant ou un code d'accès valide.
 - Les plans, durées et tarifs en vigueur sont affichés sur la page `/tarifs` et peuvent évoluer ; le tarif applicable est celui affiché au moment de l'achat.
-- Le paiement est traité par un prestataire tiers (PayTech). Am-XamXAm ne stocke aucune donnée de carte bancaire ni de compte mobile money.
+- Le paiement se négocie directement avec l'équipe sur WhatsApp (mobile money), hors plateforme : Am-XamXAm ne stocke aucune donnée de carte bancaire ni de compte mobile money, et ne voit jamais la transaction elle-même.
 - **[À trancher avec un juriste avant publication]** : politique de remboursement (délai de rétractation, cas d'erreur de paiement, non-remboursement après activation, etc.) — actuellement non formalisée dans l'application.
 
 ## 5. Assistant pédagogique (IA)
@@ -51,7 +51,7 @@ Les présentes conditions régissent l'utilisation de la plateforme Am-XamXAm (l
 
 ## 1. Qui collecte les données
 
-Am-XamXAm, éditeur du Service. Les données sont hébergées chez des sous-traitants techniques (Supabase pour la base de données, Cloudflare pour l'hébergement applicatif) et un prestataire de paiement (PayTech) pour les transactions.
+Am-XamXAm, éditeur du Service. Les données sont hébergées chez des sous-traitants techniques (Supabase pour la base de données, Cloudflare pour l'hébergement applicatif) le paiement se négociant directement sur WhatsApp, hors plateforme.
 
 ## 2. Données collectées
 
@@ -66,7 +66,7 @@ Am-XamXAm, éditeur du Service. Les données sont hébergées chez des sous-trai
 | Identifiant d'appareil (cookie technique) | Sécurité du compte (verrou par appareil) | Automatique |
 | Compteur de questions posées à l'assistant IA | Application du quota d'usage | Automatique — **le contenu des questions n'est pas conservé** |
 
-**Ce qui n'est jamais collecté** : numéro de carte bancaire ou de compte mobile money (géré exclusivement par PayTech), contenu des conversations avec l'assistant IA, données de géolocalisation précise.
+**Ce qui n'est jamais collecté** : numéro de carte bancaire ou de compte mobile money (le paiement se négocie sur WhatsApp, en dehors de la plateforme), contenu des conversations avec l'assistant IA, données de géolocalisation précise.
 
 ## 3. Ce que nous ne faisons jamais
 

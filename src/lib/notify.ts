@@ -1,14 +1,13 @@
 /**
- * Notifie le scénario Make "Confirmations" (paiement / code / premium), qui
- * se charge d'envoyer l'e-mail de confirmation. Ne doit JAMAIS faire
- * échouer l'appelant : l'activation de l'abonnement (déjà faite en base à
- * ce stade) ne dépend pas de Make — au pire l'élève reçoit son accès sans
- * e-mail de confirmation immédiat, ce qui est rattrapable, plutôt que de
- * risquer de casser un paiement ou une activation de code sur une panne
- * externe (voir cahier des charges, section 35 : gestion des erreurs).
+ * Notifie le scénario Make "Confirmations" (code / appareil), qui se charge
+ * d'envoyer l'e-mail de confirmation. Ne doit JAMAIS faire échouer
+ * l'appelant : l'activation de l'abonnement (déjà faite en base à ce stade)
+ * ne dépend pas de Make — au pire l'élève reçoit son accès sans e-mail de
+ * confirmation immédiat, ce qui est rattrapable, plutôt que de risquer de
+ * casser une activation de code sur une panne externe (cahier des charges,
+ * section 35 : gestion des erreurs).
  */
 export type ConfirmationEvent =
-  | { eventType: "payment_confirmed"; email: string; displayName: string; planName: string; endsAt: string }
   | { eventType: "code_activated"; email: string; displayName: string; planName: string; endsAt: string }
   | { eventType: "device_confirmation"; email: string; displayName: string; confirmUrl: string };
 

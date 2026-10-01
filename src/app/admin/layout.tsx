@@ -12,7 +12,6 @@ const NAV = [
   { href: "/admin/bfem", label: "Sujets BFEM" },
   { href: "/admin/codes", label: "Codes d'accès" },
   { href: "/admin/utilisateurs", label: "Utilisateurs" },
-  { href: "/admin/paiements", label: "Paiements" },
 ] as const;
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {

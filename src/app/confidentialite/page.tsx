@@ -29,7 +29,7 @@ export default function PrivacyPage() {
         <ul className="list-disc space-y-1 pl-5 text-muted">
           <li>Aucune revente ni partage de tes données à des tiers à des fins commerciales.</li>
           <li>Aucune publicité ciblée basée sur tes données à l&apos;intérieur du service.</li>
-          <li>Aucun stockage de numéro de carte bancaire ou de compte mobile money (géré par PayTech).</li>
+          <li>Aucun stockage de numéro de carte bancaire ou de compte mobile money (le paiement se fait hors plateforme, par WhatsApp).</li>
           <li>Aucun accès de tiers à tes conversations avec l&apos;assistant — elles ne sont de toute façon pas conservées.</li>
         </ul>
       </section>

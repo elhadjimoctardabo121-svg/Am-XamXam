@@ -61,6 +61,21 @@ describe("structure", () => {
       "education-civique",
     ]);
   });
+
+  it("propose un plan d'essai gratuit d'une semaine, en plus des abonnements payants", async () => {
+    const plan = await rows<{ price_fcfa: number; duration_days: number; scope: string }>(
+      `select price_fcfa, duration_days, scope from public.plans where code = 'essai-semaine'`,
+    );
+    expect(plan).toEqual([{ price_fcfa: 0, duration_days: 7, scope: "classe" }]);
+  });
+
+  it("n'a plus de table payments (paiement en ligne remplacé par les codes WhatsApp)", async () => {
+    const r = await rows(
+      `select 1 from pg_class c join pg_namespace n on n.oid = c.relnamespace
+       where n.nspname = 'public' and c.relname = 'payments'`,
+    );
+    expect(r).toEqual([]);
+  });
 });
 
 describe("inscription", () => {

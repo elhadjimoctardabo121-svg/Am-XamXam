@@ -23,7 +23,7 @@ function StatCard({ label, value, href }: { label: string; value: string; href?:
 export default async function AdminHomePage() {
   const supabase = await createClient();
 
-  const [{ count: students }, { count: activeSubs }, { count: pendingPayments }, { data: successPayments }] =
+  const [{ count: students }, { count: activeSubs }, { count: activeCodes }, { count: codesUsed }] =
     await Promise.all([
       supabase.from("students").select("id", { count: "exact", head: true }),
       supabase
@@ -31,11 +31,9 @@ export default async function AdminHomePage() {
         .select("id", { count: "exact", head: true })
         .eq("status", "active")
         .gt("ends_at", new Date().toISOString()),
-      supabase.from("payments").select("id", { count: "exact", head: true }).eq("status", "pending"),
-      supabase.from("payments").select("amount_fcfa").eq("status", "success"),
+      supabase.from("access_codes").select("id", { count: "exact", head: true }).eq("active", true),
+      supabase.from("code_activations").select("id", { count: "exact", head: true }),
     ]);
-
-  const revenue = (successPayments ?? []).reduce((sum, p: { amount_fcfa: number }) => sum + p.amount_fcfa, 0);
 
   return (
     <div className="flex flex-col gap-6">
@@ -43,8 +41,8 @@ export default async function AdminHomePage() {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatCard label="Élèves inscrits" value={String(students ?? 0)} href="/admin/utilisateurs" />
         <StatCard label="Abonnements actifs" value={String(activeSubs ?? 0)} href="/admin/utilisateurs" />
-        <StatCard label="Paiements en attente" value={String(pendingPayments ?? 0)} href="/admin/paiements" />
-        <StatCard label="Revenu total confirmé" value={`${revenue.toLocaleString("fr-FR")} FCFA`} href="/admin/paiements" />
+        <StatCard label="Codes actifs" value={String(activeCodes ?? 0)} href="/admin/codes" />
+        <StatCard label="Codes utilisés" value={String(codesUsed ?? 0)} href="/admin/codes" />
       </div>
 
       <section className="rounded-2xl border border-line bg-surface p-4">

@@ -58,9 +58,9 @@
 
 **Quand s'abonner (9 $/mois)** : dès qu'une troisième automatisation devient nécessaire, ou si le volume d'e-mails envoyés (rappels + confirmations combinés) approche 1 000/mois — plausible dès quelques centaines d'abonnés actifs (chaque abonnement génère jusqu'à 3 rappels + 1 confirmation).
 
-## 5. PayTech (paiement mobile money)
+## 5. Paiement
 
-Grille tarifaire (frais par transaction) définie contractuellement avec PayTech, non publique de façon standardisée — **à vérifier directement dans le contrat marchand actuel**, ne pas supposer un pourcentage. Point opérationnel à surveiller : le délai de reversement des fonds vers le compte bancaire/mobile money du porteur de projet, et les plafonds éventuels de transaction journalière côté opérateur (Orange Money / Wave), qui dépendent du niveau KYC du compte marchand.
+Plus de passerelle de paiement en ligne : le paiement se négocie directement sur WhatsApp (mobile money), hors plateforme — donc pas de limite technique de ce type à surveiller ici. Point à garder à l'œil : le temps de réponse humain sur WhatsApp devient le nouveau goulot d'étranglement du parcours d'achat, pas un plafond technique.
 
 ## 6. Synthèse — ordre de priorité si un budget doit être ouvert
 

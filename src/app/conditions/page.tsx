@@ -40,9 +40,9 @@ export default function TermsPage() {
         <h2 className="font-bold">4. Abonnement et paiement</h2>
         <p className="text-muted">
           Certains contenus sont gratuits, d&apos;autres nécessitent un abonnement payant ou un code d&apos;accès. Les
-          tarifs affichés sur la page Tarifs au moment de l&apos;achat sont ceux qui s&apos;appliquent. Le paiement est
-          traité par notre prestataire PayTech (Orange Money, Wave, carte) : nous ne stockons aucune donnée
-          bancaire.
+          tarifs affichés sur la page Tarifs au moment de la demande sont ceux qui s&apos;appliquent. Le code
+          s&apos;obtient en nous contactant sur WhatsApp (paiement Orange Money / Wave en dehors de la plateforme) :
+          nous ne stockons aucune donnée bancaire.
         </p>
       </section>
 

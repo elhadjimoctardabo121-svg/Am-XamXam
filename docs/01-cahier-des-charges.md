@@ -8,7 +8,7 @@ Am-XamXAm ("Je sais" en wolof) est une plateforme sénégalaise de préparation 
 - un catalogue de cours structuré (leçons, chapitres, exercices corrigés),
 - des sujets d'examen probables avec corrigés,
 - un assistant pédagogique conversationnel (IA),
-- un modèle freemium avec abonnement local (mobile money via PayTech).
+- un modèle freemium avec abonnement activé par code (demandé sur WhatsApp, payé hors plateforme en mobile money).
 
 Public cible : élèves sénégalais de 3ème, sur mobile en priorité (connexion parfois limitée).
 
@@ -39,7 +39,7 @@ Public cible : élèves sénégalais de 3ème, sur mobile en priorité (connexio
   | Abonnement annuel | 9 500 FCFA | 365 jours | Toute la classe |
   | Pack — une matière au choix | 7 500 FCFA | ~100 ans (accès permanent) | Une matière |
 
-- Paiement : **PayTech** (agrégateur sénégalais : Orange Money, Wave, cartes bancaires), avec notification IPN serveur-à-serveur qui active l'abonnement automatiquement.
+- Paiement : l'élève demande un code sur **WhatsApp**, paie en mobile money (Orange Money / Wave) hors plateforme, puis active lui-même le code reçu depuis /code.
 - Alternative : **codes d'accès** distribués hors-ligne (ex. partenariats, promotions), activables depuis l'app, avec la même granularité d'accès qu'un abonnement payé.
 
 ### 2.4 Assistant IA conversationnel
@@ -60,7 +60,7 @@ Réservé aux rôles `staff`/`admin`, avec contrôle d'accès en base (pas seule
 - **Contenus** : création/édition/validation/publication des chapitres, leçons, exercices.
 - **Sujets BFEM** : gestion des sujets d'examen.
 - **Codes** : génération et suivi des codes d'accès.
-- **Paiements** : historique des transactions PayTech.
+- **Codes** (même rubrique que ci-dessus) : génération de codes pour chaque durée (mensuel, trimestriel, semestriel, annuel, pack matière, essai 1 semaine).
 - **Utilisateurs** : gestion des rôles et comptes.
 
 ### 2.7 Automatisations (Make.com)
@@ -80,7 +80,7 @@ Réservé aux rôles `staff`/`admin`, avec contrôle d'accès en base (pas seule
 - **Base de données** : Supabase (PostgreSQL managé, Auth, Row Level Security).
 - **IA** : Cloudflare Workers AI (inférence incluse dans le compte Cloudflare).
 - **Automatisation** : Make.com.
-- **Paiement** : PayTech.
+- **Paiement** : aucun en ligne — codes d'accès distribués via demande WhatsApp.
 - **Tests** : suite automatisée (PGlite — Postgres en mémoire) qui rejoue les vraies migrations et vérifie chaque règle de sécurité/accès avant toute mise en production.
 
 ## 4. Ce qui reste hors périmètre actuel

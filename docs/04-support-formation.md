@@ -22,7 +22,7 @@
 3. Dans une matière : **chapitres → leçons → exercices**, avec un bandeau "🔒 réservé aux abonnés" dès qu'un contenu est premium — jamais un vide silencieux.
 4. **Sujets BFEM probables** : 2 gratuits par matière, le reste verrouillé de la même façon.
 5. **Assistant IA** (bouton flottant) : 5 questions gratuites à vie, puis 30/jour une fois abonné.
-6. **Abonnement** : `/tarifs` → paiement mobile money (PayTech) ou saisie d'un code d'accès.
+6. **Abonnement** : `/tarifs` → demande de code via WhatsApp (paiement mobile money hors plateforme) → activation sur `/code`.
 
 ---
 
@@ -82,7 +82,7 @@ Utile pour un partenariat, une promotion, ou un remplacement de paiement direct.
 
 ## Diapositive 8 — Gérer un paiement
 
-Le paiement passe entièrement par PayTech (Orange Money, Wave, carte) — **jamais d'activation manuelle d'un abonnement en se basant sur une simple déclaration de l'élève**. L'activation est automatique dès que PayTech confirme la transaction côté serveur. En cas de doute sur un paiement, vérifier l'historique dans `/admin/paiements` avant toute action manuelle.
+Le paiement se négocie sur WhatsApp (Orange Money, Wave), hors plateforme — **jamais d'activation manuelle d'un abonnement sans génération d'un vrai code depuis `/admin/codes`**, même pour un élève insistant. L'élève active lui-même le code reçu depuis `/code` ; en cas de doute, vérifier l'historique des codes et de leurs activations dans `/admin/codes`.
 
 ---
 

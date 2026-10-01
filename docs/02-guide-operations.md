@@ -9,7 +9,7 @@
 | Cloudflare | Hébergement (Workers), IA, DNS futur | amxamxam121@gmail.com |
 | Supabase | Base de données, authentification | projet `ijkjhlhaixemruqbvmpk` |
 | Make.com | Automatisations e-mail | organisation "My Organization", équipe "Seydi's space" |
-| PayTech | Paiement mobile money | compte marchand PayTech |
+| WhatsApp | Demande de code (paiement mobile money hors plateforme) | numéro WhatsApp de l'équipe |
 | GitHub | Code source | `elhadjimoctardabo121-svg/Am-XamXam` |
 | Gmail | Envoi des e-mails transactionnels (via Make) | connexion Google dans Make |
 
@@ -41,7 +41,7 @@ Le site est servi sur `https://amxamxam.amxamxam.workers.dev` (sous-domaine grat
 - En local : fichier `.env.local` (jamais commité — vérifié dans `.gitignore`).
 - En production (Cloudflare Worker) : `npx wrangler secret put NOM_DU_SECRET`, jamais écrit dans un fichier temporaire — toujours passé via un pipe stdin.
 - Variables publiques (`NEXT_PUBLIC_*`) : configurées dans `wrangler.jsonc` ou le tableau de bord Cloudflare, jamais dans le code.
-- Secrets actuellement configurés : clé Supabase `service_role`, clés PayTech, `MAKE_CONFIRMATION_WEBHOOK_URL`.
+- Secrets actuellement configurés : clé Supabase `service_role`, `MAKE_CONFIRMATION_WEBHOOK_URL`.
 
 ## 5. Ce que les tests automatisés ont déjà évité en production
 
@@ -66,9 +66,9 @@ Pour modifier un scénario : toujours récupérer le blueprint existant (`scenar
 - Le code est écrit derrière une interface (`AiProvider`) : changer de fournisseur (ex. passer à un modèle payant plus puissant) ne demande de modifier qu'un seul fichier (`src/lib/ai/index.ts`), jamais les pages qui l'utilisent.
 - **Point de vigilance** : les modèles Cloudflare Workers AI sont parfois dépréciés sans préavis bloquant (le modèle précédent a cessé de fonctionner sans erreur visible côté utilisateur). En cas de panne silencieuse de l'assistant, la première chose à vérifier est le journal Worker en direct (`npx wrangler tail --format pretty`) pour voir l'erreur réelle, et la liste des modèles disponibles sur le tableau de bord Cloudflare.
 
-## 8. Paiement (PayTech)
+## 8. Paiement (codes via WhatsApp)
 
-- Flux : l'élève choisit un plan → redirection vers PayTech → paiement (Orange Money / Wave / carte) → PayTech notifie le serveur (IPN) → l'abonnement est activé en base → e-mail de confirmation envoyé.
+- Flux : l'élève choisit un plan sur /tarifs → bouton WhatsApp pré-rempli → paiement mobile money négocié hors plateforme → le staff génère un code depuis /admin/codes → l'élève l'active sur /code → e-mail de confirmation envoyé.
 - Le serveur ne fait jamais confiance à une redirection navigateur pour activer un abonnement : seule la notification serveur-à-serveur (IPN), signée, déclenche l'activation.
 
 ## 9. Contenu pédagogique : comment il est ajouté
