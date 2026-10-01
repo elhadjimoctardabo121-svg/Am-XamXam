@@ -76,6 +76,40 @@ describe("structure", () => {
     );
     expect(r).toEqual([]);
   });
+
+  it("supprimer un compte ne bloque plus sur ses activations/notifications/usage IA, et préserve le contenu qu'il a créé", async () => {
+    const editorId = "00000000-0000-4000-8000-0000000000ee";
+    await createUser(db, editorId, { display_name: "Éditeur jetable" }, "editor");
+
+    const chapterId = await insertChapter(db, { slug: "jetable", class: "3eme", reviewedBy: editorId });
+    await db.query(`update public.chapters set created_by = $1 where id = $2`, [editorId, chapterId]);
+    await db.query(
+      `insert into public.ai_usage (user_id, day, message_count) values ($1, current_date, 1)
+       on conflict (user_id, day) do nothing`,
+      [editorId],
+    );
+    const plan = await rows<{ id: string }>(`select id from public.plans where code = 'mensuel'`);
+    const code = await db.query<{ id: string }>(
+      `insert into public.access_codes (code, type, plan_id, created_by) values ('TEST-CASCADE', 'cadeau', $1, $2) returning id`,
+      [plan[0].id, editorId],
+    );
+    await db.query(
+      `insert into public.code_activations (code_id, user_id) values ($1, $2)`,
+      [code.rows[0].id, editorId],
+    );
+
+    await expect(db.query(`delete from auth.users where id = $1`, [editorId])).resolves.toBeDefined();
+
+    expect(await rows(`select id from public.profiles where id = $1`, [editorId])).toEqual([]);
+    expect(await rows(`select id from public.ai_usage where user_id = $1`, [editorId])).toEqual([]);
+    expect(await rows(`select id from public.code_activations where user_id = $1`, [editorId])).toEqual([]);
+    expect(
+      await rows<{ created_by: string | null; reviewed_by: string | null }>(
+        `select created_by, reviewed_by from public.chapters where id = $1`,
+        [chapterId],
+      ),
+    ).toEqual([{ created_by: null, reviewed_by: null }]);
+  });
 });
 
 describe("inscription", () => {
