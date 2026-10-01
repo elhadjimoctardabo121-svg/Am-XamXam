@@ -707,6 +707,25 @@ describe("assistant IA : quota quotidien", () => {
   });
 });
 
+describe("codes d'accès (panel admin)", () => {
+  it("un admin peut créer un code, un élève ne peut pas (RLS ET droits de table)", async () => {
+    const plan = await rows<{ id: string }>(`select id from public.plans where code = 'mensuel'`);
+    await as(db, USERS.admin, async () => {
+      await expect(
+        db.query(`insert into public.access_codes (code, type, plan_id, created_by) values ('ADMIN-OK', 'cadeau', $1, $2)`, [
+          plan[0].id,
+          USERS.admin,
+        ]),
+      ).resolves.toBeDefined();
+    });
+    await as(db, USERS.student, async () => {
+      await expect(
+        db.query(`insert into public.access_codes (code, type, plan_id) values ('ELEVE-NON', 'cadeau', $1)`, [plan[0].id]),
+      ).rejects.toThrow(/permission denied|row-level security/);
+    });
+  });
+});
+
 describe("verrou par appareil", () => {
   it("un appareil non enregistré n'est pas de confiance ; l'enregistrer le rend de confiance", async () => {
     await as(db, USERS.student, async () => {
